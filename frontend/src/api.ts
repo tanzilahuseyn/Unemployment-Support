@@ -31,13 +31,13 @@ export interface QueryResult<T> {
   meta?: { total?: number };
 }
 
-function authHeaders(): Record<string, string> {
+export function authHeaders(): Record<string, string> {
   // MockAuthProvider persists the signed-in mock user here.
   const user = localStorage.getItem('helex_mock_user') || 'superadmin';
   return { Authorization: `Bearer ${user}` };
 }
 
-async function handle<T>(response: Response): Promise<T> {
+export async function handle<T>(response: Response): Promise<T> {
   if (!response.ok) {
     // The backend answers application/problem+json — surface its human text.
     const problem = await response.json().catch(() => null);
