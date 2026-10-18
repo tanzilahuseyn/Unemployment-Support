@@ -17,7 +17,7 @@ spring:
       # into sys_created_by / sys_modified_by when nobody is signed in (Liquibase,
       # demo data, tests). Inside a request, JdbcConfig overrides it per connection
       # with the signed-in user via core.set_user().
-      connection-init-sql: "select set_config('core.client_identifier', 'animals', false)"
+      connection-init-sql: "select set_config('core.client_identifier', 'social services', false)"
   liquibase:
     change-log: classpath:animals/db/changelog/changelog.xml
     default-schema: animals
