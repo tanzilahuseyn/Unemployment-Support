@@ -50,3 +50,13 @@ animals:
     url: http://localhost:18440/mock-registry
     # The built-in imitated registry; enabled only in the local profile.
     mock-server: false
+
+support:
+  # The local government this component serves; residence checks compare against it.
+  municipality: Tallinn
+  registry:
+    # http (default) — plain HTTPS+JSON against `url`; xroad — forge-xroad transport.
+    mode: http
+    url: http://localhost:18440/mock-registry
+    # The built-in imitated registries; enabled only in the local profile.
+    mock-server: false
