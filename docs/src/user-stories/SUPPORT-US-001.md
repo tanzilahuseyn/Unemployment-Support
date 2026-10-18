@@ -1,6 +1,6 @@
 # SUPPORT-US-001 · Decide unemployment support from live registry data
 
-> **SUPPORT-US-001** · state **Proposed** · traces to [SUPPORT.01](../specifications/SUPPORT.01-unemployment-support.md)
+> **SUPPORT-US-001** · state **Confirmed** · traces to [SUPPORT.01](../specifications/SUPPORT.01-unemployment-support.md)
 
 **As** a social worker in a local government
 **I want** to register an unemployed resident's application for social support
