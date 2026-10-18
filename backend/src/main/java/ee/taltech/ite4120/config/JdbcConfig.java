@@ -35,7 +35,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class JdbcConfig {
 
     /** Who the database sees outside a request — the same name connection-init-sql sets. */
-    static final String APPLICATION_USER = "animals";
+    static final String APPLICATION_USER = "social services";
 
     @Bean
     @Primary

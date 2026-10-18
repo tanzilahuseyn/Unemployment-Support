@@ -17,7 +17,7 @@ spring:
       # into sys_created_by / sys_modified_by when nobody is signed in (Liquibase,
       # demo data, tests). Inside a request, JdbcConfig overrides it per connection
       # with the signed-in user via core.set_user().
-      connection-init-sql: "select set_config('core.client_identifier', 'animals', false)"
+      connection-init-sql: "select set_config('core.client_identifier', 'social services', false)"
   liquibase:
     change-log: classpath:animals/db/changelog/changelog.xml
     default-schema: animals
@@ -49,4 +49,14 @@ animals:
     mode: http
     url: http://localhost:18440/mock-registry
     # The built-in imitated registry; enabled only in the local profile.
+    mock-server: false
+
+support:
+  # The local government this component serves; residence checks compare against it.
+  municipality: Tallinn
+  registry:
+    # http (default) — plain HTTPS+JSON against `url`; xroad — forge-xroad transport.
+    mode: http
+    url: http://localhost:18440/mock-registry
+    # The built-in imitated registries; enabled only in the local profile.
     mock-server: false
