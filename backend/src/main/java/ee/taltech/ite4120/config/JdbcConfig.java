@@ -49,7 +49,7 @@ public class JdbcConfig {
     }
 
     /** The principal of the current request, or the application itself outside one. */
-    static String currentUser() {
+    public static String currentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
             return APPLICATION_USER;

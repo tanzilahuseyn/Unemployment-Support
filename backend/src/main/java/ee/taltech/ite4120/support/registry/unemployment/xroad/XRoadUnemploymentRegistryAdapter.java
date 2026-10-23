@@ -4,6 +4,7 @@ import ee.taltech.ite4120.support.registry.unemployment.UnemploymentRegistration
 import ee.taltech.ite4120.support.registry.unemployment.UnemploymentRegistryAdapter;
 import ee.taltech.ite4120.support.registry.unemployment.xroad.wire.TkTootuRequest;
 import ee.taltech.ite4120.support.registry.unemployment.xroad.wire.TkTootuXmlResponse;
+import ee.taltech.ite4120.support.registry.http.WireTime;
 import ee.taltech.ite4120.support.registry.xroad.XRoadRegistryClient;
 import java.time.LocalDate;
 
@@ -24,6 +25,7 @@ public class XRoadUnemploymentRegistryAdapter implements UnemploymentRegistryAda
             return null;
         }
         LocalDate since = wire.registreerimiseKuupaev() == null ? null : LocalDate.parse(wire.registreerimiseKuupaev());
-        return new UnemploymentRegistration(wire.isikukood(), Boolean.TRUE.equals(wire.registreeritud()), since);
+        return new UnemploymentRegistration(wire.isikukood(), Boolean.TRUE.equals(wire.registreeritud()), since,
+                WireTime.parse(wire.andmedSeisuga()));
     }
 }

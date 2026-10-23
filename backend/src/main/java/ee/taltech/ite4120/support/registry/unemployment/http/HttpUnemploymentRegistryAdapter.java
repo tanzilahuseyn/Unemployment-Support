@@ -1,6 +1,7 @@
 package ee.taltech.ite4120.support.registry.unemployment.http;
 
 import ee.taltech.ite4120.support.registry.http.RegistryHttpClient;
+import ee.taltech.ite4120.support.registry.http.WireTime;
 import ee.taltech.ite4120.support.registry.unemployment.UnemploymentRegistration;
 import ee.taltech.ite4120.support.registry.unemployment.UnemploymentRegistryAdapter;
 import ee.taltech.ite4120.support.registry.unemployment.http.wire.TkTootuResponse;
@@ -23,6 +24,6 @@ public class HttpUnemploymentRegistryAdapter implements UnemploymentRegistryAdap
         }
         // The mapper — the ONLY place where Estonian wire names become our names.
         LocalDate since = wire.registreerimiseKuupaev() == null ? null : LocalDate.parse(wire.registreerimiseKuupaev());
-        return new UnemploymentRegistration(wire.isikukood(), wire.registreeritud(), since);
+        return new UnemploymentRegistration(wire.isikukood(), wire.registreeritud(), since, WireTime.parse(wire.andmedSeisuga()));
     }
 }

@@ -16,7 +16,7 @@ public class ApplicationRequest {
 
     /** 11 digits — and a string, never a number. Ignored on update: identity does not change. */
     @NotBlank
-    @Pattern(regexp = "\\d{11}", message = "applicantIsikukood must be exactly 11 digits")
+    @Pattern(regexp = "\\d{11}", message = "applicantIsikukood is not a valid Estonian personal code")
     private String applicantIsikukood;
 
     @NotBlank

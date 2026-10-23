@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DatePicker, Form, Input, InputNumber, Select } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { AppButtonPrimary, AppButtonSecondary, AppCard, useAppNotification } from '@helex/ui';
-import { supportApi, type SupportType } from '../../supportApi';
+import { isValidPersonalCode, supportApi, type BenefitScheme } from '../../supportApi';
 
 interface FormValues {
   applicantIsikukood: string;
@@ -19,11 +19,11 @@ interface FormValues {
 export const SupportCreate = () => {
   const navigate = useNavigate();
   const notify = useAppNotification();
-  const [types, setTypes] = useState<SupportType[]>([]);
+  const [types, setTypes] = useState<BenefitScheme[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    supportApi.types().then(setTypes).catch((e) => notify.error('Could not load support types', e.message));
+    supportApi.schemes().then(setTypes).catch((e) => notify.error('Could not load benefit schemes', e.message));
   }, [notify]);
 
   const submit = (v: FormValues) => {
@@ -52,14 +52,19 @@ export const SupportCreate = () => {
           label="Applicant's personal code"
           rules={[
             { required: true },
-            { pattern: /^\d{11}$/, message: 'Exactly 11 digits' },
+            {
+              validator: (_: unknown, v?: string) =>
+                !v || isValidPersonalCode(v)
+                  ? Promise.resolve()
+                  : Promise.reject(new Error('Not a valid Estonian personal code (format, birth date or checksum)')),
+            },
           ]}
           extra="Try 39001010011 — the imitated registries know this person and all checks pass"
         >
           <Input placeholder="39001010011" />
         </Form.Item>
-        <Form.Item name="supportTypeCode" label="Support type" rules={[{ required: true }]}>
-          <Select options={types.map((t) => ({ value: t.code, label: t.name }))} placeholder="Choose a support type" />
+        <Form.Item name="supportTypeCode" label="Benefit scheme" rules={[{ required: true }]} extra="Each scheme names its legal basis and the registry facts its rules require">
+          <Select options={types.map((t) => ({ value: t.code, label: t.name }))} placeholder="Choose a benefit scheme" />
         </Form.Item>
         <Form.Item name="period" label="Period" rules={[{ required: true }]} extra="The end may not be before the start">
           <DatePicker.RangePicker style={{ width: '100%' }} />

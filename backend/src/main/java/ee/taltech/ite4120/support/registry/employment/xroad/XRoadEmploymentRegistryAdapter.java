@@ -4,6 +4,7 @@ import ee.taltech.ite4120.support.registry.employment.EmploymentRegistryAdapter;
 import ee.taltech.ite4120.support.registry.employment.EmploymentStatus;
 import ee.taltech.ite4120.support.registry.employment.xroad.wire.TorTootamineRequest;
 import ee.taltech.ite4120.support.registry.employment.xroad.wire.TorTootamineXmlResponse;
+import ee.taltech.ite4120.support.registry.http.WireTime;
 import ee.taltech.ite4120.support.registry.xroad.XRoadRegistryClient;
 
 /** Employment Register over X-Road — a skeleton (see XRoadRegistryClient). */
@@ -22,6 +23,7 @@ public class XRoadEmploymentRegistryAdapter implements EmploymentRegistryAdapter
         if (wire == null || wire.isikukood() == null) {
             return null;
         }
-        return new EmploymentStatus(wire.isikukood(), Boolean.TRUE.equals(wire.aktiivneTootamine()));
+        return new EmploymentStatus(wire.isikukood(), Boolean.TRUE.equals(wire.aktiivneTootamine()),
+                WireTime.parse(wire.andmedSeisuga()));
     }
 }

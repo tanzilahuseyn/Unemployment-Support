@@ -4,6 +4,7 @@ import ee.taltech.ite4120.support.registry.employment.EmploymentRegistryAdapter;
 import ee.taltech.ite4120.support.registry.employment.EmploymentStatus;
 import ee.taltech.ite4120.support.registry.employment.http.wire.TorTootamineResponse;
 import ee.taltech.ite4120.support.registry.http.RegistryHttpClient;
+import ee.taltech.ite4120.support.registry.http.WireTime;
 
 /** Employment Register over plain HTTPS+JSON; locally the imitated registry at /mock-registry/employment. */
 public class HttpEmploymentRegistryAdapter implements EmploymentRegistryAdapter {
@@ -18,6 +19,7 @@ public class HttpEmploymentRegistryAdapter implements EmploymentRegistryAdapter 
     public EmploymentStatus lookup(String isikukood) {
         TorTootamineResponse wire = http.get("/employment/" + isikukood, TorTootamineResponse.class);
         // The mapper — the ONLY place where Estonian wire names become our names.
-        return wire == null ? null : new EmploymentStatus(wire.isikukood(), wire.aktiivneTootamine());
+        return wire == null ? null
+                : new EmploymentStatus(wire.isikukood(), wire.aktiivneTootamine(), WireTime.parse(wire.andmedSeisuga()));
     }
 }

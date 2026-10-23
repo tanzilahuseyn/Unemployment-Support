@@ -10,7 +10,7 @@ import {
   useAppNotification,
   type ResourceListColumn,
 } from '@helex/ui';
-import { statusColor, supportApi, type Application, type SupportType } from '../../supportApi';
+import { statusColor, statusLabel, supportApi, type Application, type BenefitScheme } from '../../supportApi';
 
 /**
  * The application list — SUPPORT.01 § UI, Application list. ResourceList with search
@@ -20,14 +20,14 @@ export const SupportList = () => {
   const navigate = useNavigate();
   const notify = useAppNotification();
   const [rows, setRows] = useState<Application[]>([]);
-  const [types, setTypes] = useState<SupportType[]>([]);
+  const [types, setTypes] = useState<BenefitScheme[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string | undefined>();
   const [typeCode, setTypeCode] = useState<string | undefined>();
 
   useEffect(() => {
-    supportApi.types().then(setTypes).catch((e) => notify.error('Could not load support types', e.message));
+    supportApi.schemes().then(setTypes).catch((e) => notify.error('Could not load benefit schemes', e.message));
   }, [notify]);
 
   const load = useCallback(
@@ -71,7 +71,7 @@ export const SupportList = () => {
     },
     {
       key: 'supportTypeCode',
-      title: 'Support type',
+      title: 'Benefit scheme',
       dataIndex: 'supportTypeCode',
       render: (code: string) => <AppTag>{typeName(code)}</AppTag>,
     },
@@ -87,7 +87,7 @@ export const SupportList = () => {
       key: 'status',
       title: 'Status',
       dataIndex: 'status',
-      render: (s: Application['status']) => <AppTag color={statusColor[s]}>{s}</AppTag>,
+      render: (s: Application['status']) => <AppTag color={statusColor[s]}>{statusLabel[s]}</AppTag>,
     },
   ];
 
@@ -108,16 +108,12 @@ export const SupportList = () => {
               placeholder="Any status"
               value={status}
               onChange={(v?: string) => setStatus(v)}
-              options={[
-                { value: 'OPEN', label: 'Open' },
-                { value: 'APPROVED', label: 'Approved' },
-                { value: 'REJECTED', label: 'Rejected' },
-              ]}
+              options={Object.entries(statusLabel).map(([value, label]) => ({ value, label }))}
             />
             <Select
               allowClear
               style={{ width: '100%' }}
-              placeholder="Any support type"
+              placeholder="Any benefit scheme"
               value={typeCode}
               onChange={(v?: string) => setTypeCode(v)}
               options={types.map((t) => ({ value: t.code, label: t.name }))}
