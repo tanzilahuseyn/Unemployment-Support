@@ -1,169 +1,251 @@
 # SUPPORT.01 · Unemployment social support
 
-> **SUPPORT.01** · state **Confirmed** · traces from [SUPPORT-US-001](../user-stories/SUPPORT-US-001.md)
+> **SUPPORT.01** · state **Proposed** (revision 2) · traces from [SUPPORT-US-001](../user-stories/SUPPORT-US-001.md)
 > · source `backend/src/main/java/ee/taltech/ite4120/support/`, `backend/src/main/resources/support/db/changelog/`, `frontend/src/pages/support/`
 
 ## Description
 
-A case register for a local government's social workers: register an
-unemployed resident's application for support, see three live registry checks
-side by side, and approve or reject it. Create, search, view, update and
-withdraw (soft delete) applications while they are open; a decision closes
-them.
+A case register for a local government's social workers. A worker registers an
+unemployed resident's application for a **municipal benefit scheme**, verifies
+the facts that scheme's rules depend on from three state registries over
+X-Road, resolves anything the registries could not confirm, and records a
+**reasoned decision**.
 
-The three checks are asked over X-Road, each through its own adapter
-(imitated by the application in this course, X-Road-shaped in production):
+**Revision 2** follows the group's legislation and policy analysis. Compared
+with revision 1 it adds:
+- benefit schemes tied to their legal instrument and rules;
+- checksum validation of personal codes;
+- an evidence record per check, with source and timestamps;
+- the results `INCONCLUSIVE` and the status `PENDING_VERIFICATION`;
+- manual verification;
+- structured, legally reasoned rejections;
+- an append-only audit log.
 
-| Check | Registry | Passes when |
+Revision 1's *override* becomes an **exception** that only applies to a
+verified adverse fact.
+
+The benefit is **assumed** to be a separate Tallinn municipal benefit for
+unemployed residents, with cases handled by Mustamäe District Government. It is
+not the statutory subsistence benefit (toimetulekutoetus). The legal instrument
+and its rules are **placeholders until confirmed** (see *Outside the code*).
+
+| Fact | Registry | Verified positive | Verified adverse | Inconclusive |
+| --- | --- | --- | --- | --- |
+| **Residence** | Population Register (Rahvastikuregister) | lives in `support.municipality` | lives in another municipality | person not found, or no municipality in the record |
+| **Unemployment** | Unemployment Insurance Fund (Töötukassa) | registered as unemployed | not registered (or no record) | registered **and** an active employment: the registries contradict each other |
+| **Employment** | Employment Register (töötamise register, EMTA) | no active employment (or no record) | an active employment | same contradiction as above |
+
+A registry that cannot be reached gives `UNAVAILABLE`. Each check therefore
+ends as `PASS` (verified positive), `FAIL` (verified adverse), `UNAVAILABLE`
+or `INCONCLUSIVE`.
+
+**Privacy constraint — part of the specification.**
+- **Stored:** the personal code, the application, one minimal evidence record
+  per check (result, a short status such as `REGISTERED_SINCE 2026-08-15`, the
+  source, when it was retrieved, and the registry's own data timestamp), the
+  decision, and audit events.
+- **Never stored or logged:** names, addresses or full registry answers. They
+  are shown to the worker only while verifying.
+
+## Status flow
+
+| Status | Means | Next |
 | --- | --- | --- |
-| **Residence** | Population Register (Rahvastikuregister) | the person exists and their residence is in this municipality |
-| **Unemployment** | Unemployment Insurance Fund (Töötukassa) | the person is registered as unemployed |
-| **Employment** | Employment Register (töötamise register, EMTA) | the person has no active employment |
+| `OPEN` | registered, not yet verified | verify → `PENDING_VERIFICATION` or `READY_FOR_DECISION` |
+| `PENDING_VERIFICATION` | at least one **required** check is `UNAVAILABLE` or `INCONCLUSIVE` | verify again, or verify manually → `READY_FOR_DECISION` |
+| `READY_FOR_DECISION` | every required check is `PASS` or `FAIL` | approve / reject |
+| `APPROVED`, `REJECTED` | decided; final | — |
 
-Each check ends as `PASS`, `FAIL` or `UNAVAILABLE` (the registry could not be
-reached). The municipality the component serves is configuration
-(`support.municipality`), not data.
-
-**Privacy constraint — part of the specification.** Stored: the applicant's
-personal code, the application, and the decision with the three check
-outcomes. Never stored: names, addresses, dates or any other registry answer;
-they are looked up live each time and shown only to the worker.
-
-Excluded: payment, calculating the amount, appeals, a self-service portal for
-applicants, authentication management (mock auth only), other support types.
+- **Undecided** means `OPEN`, `PENDING_VERIFICATION` or `READY_FOR_DECISION`.
+- Editing an undecided application returns it to `OPEN`, because verification
+  must be redone.
+- Withdrawing (soft delete) is possible while undecided.
+- A rejection that does not cite a registry fact (`INCOMPLETE_APPLICATION`,
+  `OTHER`) is possible from any undecided status.
 
 ## Data model
 
+Revision 1's changesets 01–03 and 90 are released and stay unchanged. Revision 2
+adds changesets 04–08.
+
 | Table | Field | Type | Rules |
 | --- | --- | --- | --- |
-| `support.support_type` | `code` PK | text | reference list: `ONE_OFF`, `MONTHLY` |
-| | `name` | text | display name |
-| `support.application` | `id` PK | bigint | from `core.seq_id` |
-| | `applicant_isikukood` | text | required; exactly 11 digits — a string, never a number |
-| | `support_type_code` | text | required; FK → support_type |
-| | `period_start` | date | required |
-| | `period_end` | date | required; not before `period_start` |
-| | `household_size` | int | required; 1 … 20 |
-| | `status` | text | `OPEN`, `APPROVED` or `REJECTED`; new applications are `OPEN` |
-| | `sys_*` | — | platform columns, trigger-managed |
-| `support.decision` | `id` PK | bigint | from `core.seq_id` |
-| | `application_id` | bigint | required; FK → application; **unique** — one decision per application |
-| | `outcome` | text | `APPROVED` or `REJECTED` |
-| | `override` | boolean | required; true only for an approval with a check that did not pass |
-| | `reason` | text | ≤2000; required when rejecting and when overriding |
-| | `residence_check` | text | `PASS`, `FAIL` or `UNAVAILABLE`, as seen at the moment of deciding |
-| | `unemployment_check` | text | same |
-| | `employment_check` | text | same |
-| | `sys_*` | — | platform columns; `sys_created_by` / `sys_created_at` are **who decided and when** |
+| `support.support_type` — the **benefit scheme** | `code` PK, `name` | text | `ONE_OFF`, `MONTHLY` |
+| | `legal_basis` | text | the governing instrument and provision — placeholder text until confirmed |
+| | `rule_version` | text | e.g. `2026-1` |
+| | `effective_from`, `effective_to` | date | `effective_to` optional; a scheme is offered only while effective |
+| | `requires_residence`, `requires_unemployment`, `requires_no_employment` | boolean | which facts the scheme's rules depend on |
+| | `review_info` | text | how a decision can be challenged; copied into every decision |
+| `support.application` | (as revision 1) | | `applicant_isikukood`: valid Estonian personal code (format, birth date, checksum). `status` adds `PENDING_VERIFICATION` and `READY_FOR_DECISION` |
+| `support.check_evidence` | `id` PK | bigint | from `core.seq_id` |
+| | `application_id` | bigint | FK → application |
+| | `check_type` | text | `RESIDENCE`, `UNEMPLOYMENT`, `EMPLOYMENT` |
+| | `result` | text | `PASS`, `FAIL`, `UNAVAILABLE`, `INCONCLUSIVE` |
+| | `status_detail` | text | ≤100; minimal returned status, e.g. `IN_MUNICIPALITY`, `REGISTERED_SINCE 2026-08-15`, `ACTIVE_EMPLOYMENT` — never names or addresses |
+| | `source` | text | registry and service, e.g. `Töötukassa · tootuParing v1`, or `MANUAL · <source named by worker>` |
+| | `retrieved_at` | timestamptz | when the system asked |
+| | `source_data_at` | timestamptz | the registry's own "data as of" time; null if unknown or manual |
+| | `manual` | boolean | true for a manual verification |
+| | `note` | text | ≤1000; required for a manual verification |
+| | `decision_id` | bigint | FK → decision; set on the evidence a decision relied on |
+| | `sys_*` | — | platform columns; `sys_created_by` is who verified |
+| `support.decision` | (as revision 1) | | adds `reason_code`, `legal_basis`, `rule_version`, `review_info`. `override` now means **exception**; `reason` is the **explanation** |
+| `support.audit_event` | `id` PK | bigint | from `core.seq_id` |
+| | `occurred_at` | timestamptz | default `now()` |
+| | `actor` | text | the signed-in user |
+| | `action` | text | `SEARCH`, `VIEW`, `CREATE`, `UPDATE`, `WITHDRAW`, `REGISTRY_QUERY`, `MANUAL_VERIFICATION`, `DECISION` |
+| | `application_id` | bigint | when the action concerns one |
+| | `detail` | text | ≤500; e.g. `Töötukassa: PASS` — **never** a registry payload, name or address |
 
-Three tables, two foreign keys. Indexes on business tables carry
-`where (sys_status = 'A')`. Support types are seeded with the reference
-table; demo applications arrive under `context:demo`. Rules the database can
-hold (formats, ranges, enumerations, `period_end ≥ period_start`, one decision
-per application) are check constraints as well as service rules.
+`audit_event` is **append-only**: a trigger refuses `UPDATE` and `DELETE`. The
+latest evidence row per application and check type is the current one; older
+rows stay as history.
+
+**Reason codes:**
+- `NOT_RESIDENT`: needs residence `FAIL`
+- `NOT_REGISTERED_UNEMPLOYED`: needs unemployment `FAIL`
+- `ACTIVE_EMPLOYMENT`: needs employment `FAIL`
+- `INCOMPLETE_APPLICATION` and `OTHER`: no registry fact needed
+
+**Demo data.** Three demo personal codes from revision 1 fail the checksum. A
+`context:demo` changeset replaces them with valid ones:
+
+| Was | Now |
+| --- | --- |
+| 49002020022 | 49002020024 |
+| 39003030033 | 39003030035 |
+| 49004040044 | 49004040048 |
+
+39001010011 is already valid and stays.
+
+**Seeded schemes (placeholders):**
+
+| Scheme | Requires |
+| --- | --- |
+| `ONE_OFF` | residence and unemployment |
+| `MONTHLY` | all three facts |
 
 ## API
 
 | Method + path | Does | Failure answers |
 | --- | --- | --- |
-| `GET /api/support/applications` | paged search: `textContains` (personal code), `status`, `supportTypeCode`, `limit`, `offset`, `sort` (`periodStart`, `applicantIsikukood`) | 400 unknown sort key |
-| `GET /api/support/applications/{id}` | one active application | 404 |
-| `POST /api/support/applications` | register; **201 + Location** | 400 validation · 409 overlapping open application |
-| `PUT /api/support/applications/{id}` | update an open application; the personal code is immutable | 400 · 404 · 409 already decided |
-| `DELETE /api/support/applications/{id}` | withdraw an open application (soft) — **204** | 404 · 409 already decided |
-| `GET /api/support/applications/{id}/checks` | the three checks, live; with the details the worker needs (name, address, municipality, unemployed since, employment active) — **never stored** | 404 |
-| `POST /api/support/applications/{id}/decision` | decide: body `outcome`, `override`, `reason`. The server runs the three checks itself — it never trusts check results sent by the client — and stores their outcomes with the decision; **201** | 400 missing reason · 400 approval without override while a check did not pass · 404 · 409 already decided |
-| `GET /api/support/applications/{id}/decision` | the decision of a decided application | 404 |
-| `GET /api/support/types` | the reference list | — |
+| `GET /api/support/applications` | paged search: `textContains` (personal code), `status`, `supportTypeCode`, `limit`, `offset`, `sort`; a non-empty `textContains` writes a `SEARCH` audit event | 400 unknown sort key |
+| `GET /api/support/applications/{id}` | one active application; writes `VIEW` | 404 |
+| `POST /api/support/applications` | register; **201 + Location** | 400 validation · 409 overlapping undecided application (the message names it) |
+| `PUT /api/support/applications/{id}` | update an undecided application; personal code immutable; status back to `OPEN` | 400 · 404 · 409 decided |
+| `DELETE /api/support/applications/{id}` | withdraw an undecided application (soft) — **204** | 404 · 409 decided |
+| `POST /api/support/applications/{id}/verification` | query the registries the scheme **requires**, store one evidence record per check, set the status. Answers the current evidence plus the live details (name, address) for display — **those are not stored** | 404 · 409 decided |
+| `GET /api/support/applications/{id}/evidence` | the current evidence per check (stored data only) | 404 |
+| `POST /api/support/applications/{id}/evidence/{checkType}/manual` | body `result` (`PASS`/`FAIL`), `source`, `note`: resolve an `UNAVAILABLE` or `INCONCLUSIVE` check from another authorised source; recomputes the status | 400 missing note or source · 404 · 409 the check is not unresolved, or the application is decided |
+| `POST /api/support/applications/{id}/decision` | body `outcome`, `exception`, `reasonCode`, `explanation`. The server uses the stored evidence and copies `legal_basis`, `rule_version` and `review_info` from the scheme; **201** | 400 rule violations (below) · 404 · 409 decided |
+| `GET /api/support/applications/{id}/decision` | the decision with its evidence | 404 |
+| `GET /api/support/applications/{id}/audit` | the application's audit events | 404 |
+| `GET /api/support/schemes` | effective benefit schemes with their rules | — |
+
+**Decision rules** (400 when broken):
+- **Approve:** only from `READY_FOR_DECISION`.
+  - Every required check `PASS` → approve directly.
+  - A required check `FAIL` → approve only with `exception: true` and an explanation.
+- **Reject:** needs a `reasonCode` and an explanation. A registry reason code
+  needs that check to be `FAIL`.
+- **While `PENDING_VERIFICATION`:** no approval, and no rejection with a
+  registry reason code.
 
 Every error is `application/problem+json`. All endpoints require
 `Authorization: Bearer <user>` (mock auth); the contract is live at
 `/swagger-ui.html`.
 
-**Failure policy** — two different answers on purpose:
-- **Viewing fails open.** If a registry is unreachable, `/checks` still
-  answers 200 with that check `UNAVAILABLE`; the application and the other
-  checks stay usable.
-- **Approving fails closed.** `UNAVAILABLE` counts as not passing, so an
-  approval then needs an override with a justification. Money must not be
-  granted on a check nobody could make, unless a person takes responsibility
-  for it in writing.
+**Failure policy:**
+- **Viewing fails open:** an unreachable registry is one `UNAVAILABLE` check,
+  and the other checks and the page still work.
+- **Deciding fails safe:** `UNAVAILABLE` and `INCONCLUSIVE` neither approve
+  nor reject anyone. They hold the application in `PENDING_VERIFICATION` until
+  the fact is verified, by the registry or manually.
 
-A person a registry does not know is a `FAIL`, not `UNAVAILABLE`.
-
-**The registries.** Three adapters in `support/registry/`, each laid out like
-`animals/ownerregistry/`: an interface, an HTTP adapter, an X-Road skeleton,
-and one mapper from the wire record (Estonian field names, not translated)
-to our domain record. In local mode the application imitates all three:
-
-| Imitated endpoint | Wire record |
-| --- | --- |
-| `GET /mock-registry/population/{isikukood}` | `RrElukohtResponse(isikukood, eesnimi, perekonnanimi, aadress, omavalitsus)` |
-| `GET /mock-registry/unemployment/{isikukood}` | `TkTootuResponse(isikukood, registreeritud, registreerimiseKuupaev)` |
-| `GET /mock-registry/employment/{isikukood}` | `TorTootamineResponse(isikukood, aktiivneTootamine)` |
-
-Each answers 404 for an unknown person. The mocks hold four **fictional**
-people, enough to demonstrate every case: one who passes all three checks,
-one who lives in another municipality, one with an active employment, and
-one who is not registered as unemployed. Real people's data is not copied
-into the mocks.
+**The registries.** Three adapters in `support/registry/`:
+- Each has an interface, an HTTP adapter, an X-Road skeleton and a mapper from
+  Estonian wire records.
+- Each wire record gains the registry's data timestamp `andmedSeisuga`.
+- The system queries only the registries the scheme requires.
+- The imitated registries at `/mock-registry/{population,unemployment,employment}`
+  answer for the four fictional demo people.
 
 ## UI
 
 | Screen | Element | Component | Rules |
 | --- | --- | --- | --- |
-| Application list `/support` | table | `ResourceList` | columns: personal code (locked, **a link to the application**), support type tag (`AppTag`), period, household size, status tag; search field; filters for status and support type |
-| | register button | `AppButtonPrimary` | navigates to the form |
-| Application page `/support/{id}` | view / edit | `ResourceForm` + `useDataController` | section Application (personal code read-only, support type, period start and end, household size); Edit → Save is `PUT` and Withdraw is the soft `DELETE` — both only while `OPEN` |
-| | checks | `AppCard` with one row per check, status as `AppTag` (green `PASS`, red `FAIL`, grey `UNAVAILABLE`) | loaded from `/checks`; shows name and address, unemployed since, and employment active; a registry being down shows that check as unavailable and nothing else changes |
-| | decision | `AppCard`: `Radio.Group` Approve / Reject, `Checkbox` Override, `Input.TextArea` reason, `AppButtonPrimary` Decide | only while `OPEN`. Override is offered only when a check did not pass; reason is required for Reject and for an override. After deciding, the card shows the stored decision read-only: outcome, override, reason, the three check outcomes, who and when |
-| | metadata | `ResourceForm.sidebar` — `AppCard` of `FieldItem`s | created at / by, modified at / by, version |
-| Register form `/support/new` | personal code | `Input` | required, pattern `\d{11}` |
-| | support type | `Select` | required, options from `/types` |
-| | period | `DatePicker.RangePicker` | required; end not before start |
-| | household size | `InputNumber` | required, 1 … 20 |
-| | submit | `AppButtonPrimary` | 400/409 problem text shown verbatim in a notification |
+| Application list `/support` | table, search, filters | `ResourceList` | as revision 1; status tags for all five statuses; "Benefit scheme" instead of "Support type" |
+| Application page `/support/{id}` | application | `ResourceForm` + `useDataController` | Edit and Withdraw while undecided |
+| | verification | `AppCard` with **Verify** (`AppButtonPrimary`) and one row per required check: result `AppTag` (green `PASS`, red `FAIL`, grey `UNAVAILABLE`, orange `INCONCLUSIVE`), status detail, source, retrieved at, data as of; live name and address after a verification, marked as not stored | a check not required by the scheme is shown as "not required" |
+| | manual verification | per unresolved check: `Radio.Group` `PASS`/`FAIL`, `Input` source, `Input.TextArea` note, `AppButtonSecondary` | only for `UNAVAILABLE` / `INCONCLUSIVE` |
+| | decision | `AppCard`: `Radio.Group` Approve / Reject, `Checkbox` Exception, `Select` reason code, `Input.TextArea` explanation, `AppButtonPrimary` Decide | Approve enabled only when `READY_FOR_DECISION`; Exception only when a required check is `FAIL`; after deciding, read-only with legal basis, rule version and review information |
+| | audit | `AppCard` list of the application's audit events | read-only |
+| Register form `/support/new` | as revision 1 | | personal code validated with checksum; scheme options from `/schemes` |
 
 ## Business tests
 
-1. **A personal code is exactly 11 digits.**
-   Given a request with personal code `1234567890` (10 digits) or
-   `3810213026A`, when it is registered, then it is refused (400) with
-   "applicantIsikukood must be exactly 11 digits".
-2. **A period does not end before it starts.**
-   Given a period from 2026-11-01 to 2026-10-01, when it is registered, then it
-   is refused (400) with "periodEnd must not be before periodStart".
-3. **One open application per person for overlapping periods.**
-   Given an open application for person X for October, when a second one for X
-   covers 15 October to 15 November, then it conflicts (409). One for December
-   is accepted. And when the October application is decided, an overlapping
-   one may be registered again.
-4. **A rejection needs a reason.**
-   Given an open application, when it is rejected without a reason, then the
-   decision is refused (400) with "reason is required to reject".
-5. **All checks pass: approve directly; then it is closed.**
-   Given registries that pass all three checks, when the application is
-   approved without override, then the decision is stored with outcome
-   `APPROVED`, override false and three `PASS` outcomes, and the application
-   is `APPROVED`. And a later update, withdrawal or second decision conflicts
-   (409).
-6. **A failing check needs an override with a justification.**
-   Given registries where the employment check fails, when the application is
-   approved without override, then it is refused (400) with "a check did not
-   pass: approve only as an override with a reason". And when approved with
-   override and a reason, then it is stored with override true and
-   `employment_check` `FAIL`.
-7. **An unreachable registry is unavailable, not fatal.**
-   Given the unemployment registry is down, when the checks are requested,
-   then the answer is 200 with unemployment `UNAVAILABLE` and the other two
-   checks present. And an approval then needs an override, as in test 6.
+1. **A personal code is a valid Estonian personal code.**
+   Given `1234567890`, `99001010011` (invalid first digit), `39013010011`
+   (month 13) or `39001010012` (wrong checksum), when registered, then refused
+   (400) with "applicantIsikukood is not a valid Estonian personal code"; and
+   `39001010011` is accepted.
+2. **A period does not end before it starts.** As in revision 1.
+3. **One undecided application per person for overlapping periods.**
+   Given an undecided application A for October, when another overlapping one
+   is registered, then 409 naming application A. After A is decided, an
+   overlapping one is accepted.
+4. **Only the registries the scheme requires are asked, and evidence is
+   recorded.** Given a `ONE_OFF` application (residence + unemployment), when
+   it is verified, then the Employment Register is never called. Each stored
+   evidence row has a result, source, retrieval time and data timestamp, and
+   no names or addresses.
+5. **Unverifiable is pending, not ineligible.** Given the unemployment
+   registry is down, when a `MONTHLY` application is verified, then it is
+   `PENDING_VERIFICATION`, approval is refused, and a rejection citing
+   `NOT_REGISTERED_UNEMPLOYED` is refused. After a manual verification `PASS`
+   with source and note, it is `READY_FOR_DECISION` and can be approved; the
+   decision's evidence includes the manual record.
+6. **Contradicting registries are inconclusive.** Given a person registered as
+   unemployed **and** with an active employment, when verified, then both
+   checks are `INCONCLUSIVE` and the application is `PENDING_VERIFICATION`.
+7. **A verified adverse fact needs an exception.** Given an active employment
+   (`FAIL`) for a `MONTHLY` application, approval without exception is refused
+   (400). With `exception` and an explanation it is approved with exception
+   true.
+8. **A rejection is reasoned and carries the legal basis.** A rejection
+   without reason code or explanation is refused. A rejection with
+   `NOT_RESIDENT` is accepted when residence is `FAIL`, and stores the scheme's
+   legal basis, rule version and review information.
+9. **A decision is final.** After a decision, another decision, an update or a
+   withdrawal conflicts (409).
+10. **Searches, registry queries and decisions are audited without payloads.**
+    A search by personal code, a verification and a decision each write audit
+    events with the actor and application. No event contains a name or
+    address. Updating or deleting an audit event is refused by the database.
 
-Tests 1–7 are backend tests (`SupportBusinessRulesIT`), with the three
-registry adapters replaced by test doubles so each case is set up exactly.
-The privacy constraint is verified by inspection: the decision table has no
-columns for names, addresses or registry dates, and `/checks` reads live and
-writes nothing.
+Tests 1–10 are backend tests (`SupportBusinessRulesIT`), with the three
+registry adapters as test doubles.
 
-**Open for the group to decide:** the final list of support types and
-whether household size should change the rules (for example, a maximum
-period per type).
+## Outside the code
+
+These come from the legislation and policy analysis. They are organisational
+or legal work, documented here so they are not mistaken for done:
+
+- **Legal basis and eligibility matrix:** confirm the benefit, the Tallinn
+  instrument and its rules; replace the placeholder `legal_basis` and rules.
+- **Registry access:** authorisation from each data provider for this
+  municipality, purpose and fields; a dedicated X-tee subsystem with
+  service-level access rights.
+- **Staff roles and reopening of decisions:** not built in this version (mock
+  auth gives every user every right). Planned: caseworker roles that restrict
+  searches and registry queries, and an authorised replacement-decision process
+  with audit trail.
+- **DPIA screening, privacy notice to applicants, retention schedule** for
+  applications, evidence and audit events, and **monitoring and incident
+  procedures**.
+- Household size is recorded **for context only**; no rule uses it.
+
+The source analysis cites GDPR (Art. 5, 6, 13, 15–16, 24–25, 32, 35), the
+Social Welfare Act (§§ 14–15, 131–134), the Population Register Act (§§ 6, 65,
+70), the Taxation Act (§ 25¹), the Administrative Procedure Act (§ 56), the
+Public Information Act, and RIA's X-tee and E-ITS guidance.
