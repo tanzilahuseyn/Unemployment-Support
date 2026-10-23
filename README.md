@@ -1,9 +1,11 @@
 # Unemployment Support
 
 A case register for a local government's social workers: register an
-unemployed resident's application for social support, see **live** what three
-state registries say about them, and approve or reject it, without asking the
-applicant for paper certificates the state already holds.
+unemployed resident's application for a municipal support benefit, verify the
+facts its rules depend on from three state registries over X-Road, and record a
+reasoned decision, without asking the applicant for paper certificates the
+state already holds. Revision 2 follows the group's legislation and policy
+analysis.
 
 An ITE4120 course project, built on the course's e-government-shaped template
 ([igorboss/ite4120](https://github.com/igorboss/ite4120)): Spring Boot,
@@ -13,15 +15,16 @@ registry lookups over X-Road, imitated locally.
 ## What it does
 
 **Applications** (`/support`)
-- Register an application with the applicant's personal code, support type
-  (one-off or monthly), period and household size.
-- Search by personal code; filter by status (open, approved, rejected) and
-  support type.
-- Edit or withdraw an application while it is open. A decided application can
-  no longer change.
-- A person can have only one open application for overlapping periods.
+- Register an application with the applicant's personal code (validated with
+  birth date and checksum), **benefit scheme**, period and household size.
+  Each scheme names its legal basis, rule version and the registry facts its
+  rules require.
+- Search by personal code (audited); filter by status and benefit scheme.
+- Edit or withdraw an application while it is undecided. A decided application
+  can no longer change.
+- A person can have only one undecided application for overlapping periods.
 
-**Three live X-Road checks** on every application page:
+**Verification over X-Road** queries only the registries the scheme requires:
 
 | Check | Registry | Passes when |
 | --- | --- | --- |
@@ -29,20 +32,31 @@ registry lookups over X-Road, imitated locally.
 | Unemployment | Unemployment Insurance Fund (Töötukassa) | the person is registered as unemployed |
 | Employment | Employment Register (töötamise register, EMTA) | the person has no active employment |
 
-Each check is **PASS**, **FAIL** or **UNAVAILABLE** (the registry could not be
-reached). A registry being down never breaks the page.
+Each check is **PASS** (verified positive), **FAIL** (verified adverse),
+**UNAVAILABLE** (the registry could not be reached) or **INCONCLUSIVE** (the
+registries contradict each other, or the person is not found). Each result is
+stored as **evidence** with its source, retrieval time and the registry's own
+data timestamp.
+
+**Unverifiable is not ineligible.** An unavailable or inconclusive check puts
+the application in **pending verification**. The worker can resolve it by
+**manual verification** from another authorised source, with a note.
 
 **Decisions**
-- Approve directly when all three checks pass.
-- If a check fails or is unavailable, approve only as an **override** with a
-  written justification.
-- A rejection always needs a reason.
-- The server runs the checks again when deciding and stores who decided, when,
-  and each check's outcome at that moment.
+- Approve when every required fact is verified positive.
+- A verified adverse fact allows approval only as an **exception** with an
+  explanation.
+- A rejection needs a **reason code** and an explanation. A registry reason
+  needs that fact verified adverse.
+- Each decision carries the scheme's **legal basis**, rule version and how to
+  challenge it, and links the evidence it relied on.
+- Searches, registry queries, manual verifications and decisions go to an
+  **append-only audit log**.
 
-**Private by design:** only the personal code, the application and the
-decision are stored. Names, addresses and registry details are looked up live
-each time and never stored.
+**Private by design:** only the personal code, the application, a minimal
+evidence record per check and the decision are stored. Names, addresses and
+full registry answers are looked up live, shown once, and never stored or
+logged.
 
 ## Specification
 
@@ -91,16 +105,18 @@ You are signed in automatically as a mock user. The API accepts
 `Authorization: Bearer <any-username>` in local mode. The municipality the
 component serves is `support.municipality` in `application.yml` (Tallinn).
 
-**Demo data** (loaded locally under the Liquibase `demo` context): one open
-application for each of four **fictional** people the imitated registries
-know, one per case:
+**Demo data** (loaded locally under the Liquibase `demo` context): one
+application for each of six **fictional** people the imitated registries know,
+one per case:
 
-| Personal code | Person | Checks |
+| Personal code | Person | Verification |
 | --- | --- | --- |
-| 39001010011 | Kalle Kask | all pass |
-| 49002020022 | Liis Lepp | residence fails: lives in Tartu |
-| 39003030033 | Mart Mets | employment fails: has an active employment |
-| 49004040044 | Anu Allik | unemployment fails: not registered |
+| 39001010011 | Kalle Kask | all verified positive |
+| 49002020024 | Liis Lepp | residence verified adverse: lives in Tartu |
+| 39003030035 | Mart Mets | not registered and employed: verified adverse (one-off scheme asks only residence and unemployment) |
+| 49004040048 | Anu Allik | unemployment verified adverse: not registered |
+| 39005050059 | Rein Rebane | registered **and** employed: inconclusive, pending verification |
+| 49006060061 | Eve Ilves | Töötukassa unavailable: pending verification, try manual verification |
 
 The database is disposable: `scripts/reset-db` destroys and recreates it, and
 Liquibase rebuilds the schema on the next backend start.
@@ -115,14 +131,18 @@ Each line runs from the project folder:
 python3 scripts/check_changesets.py # Liquibase formatted-SQL rules
 ```
 
-`SupportBusinessRulesIT` holds the specification's seven business tests:
-- personal code format
+`SupportBusinessRulesIT` holds the specification's ten business tests:
+- valid Estonian personal code, including the checksum
 - period order
-- one open application per person for overlapping periods
-- a rejection needs a reason
-- approve directly when all checks pass, after which the application is closed
-- a failing check needs an override with a reason
-- an unreachable registry is unavailable, not fatal
+- one undecided application per person for overlapping periods
+- only the registries the scheme requires are asked, and evidence is recorded
+- unverifiable is pending, not ineligible, and manual verification resolves it
+- contradicting registries are inconclusive
+- a verified adverse fact needs an exception
+- a rejection is reasoned and carries the legal basis
+- a decision is final
+- searches, registry queries and decisions are audited without payloads, and
+  the audit log is append-only
 
 The three registries are test doubles, so each case is set up exactly.
 `XRoadSkeletonsTest` checks that each X-Road adapter fails fast and clearly

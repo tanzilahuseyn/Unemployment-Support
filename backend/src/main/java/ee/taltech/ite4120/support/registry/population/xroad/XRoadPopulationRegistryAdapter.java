@@ -4,6 +4,7 @@ import ee.taltech.ite4120.support.registry.population.PersonResidence;
 import ee.taltech.ite4120.support.registry.population.PopulationRegistryAdapter;
 import ee.taltech.ite4120.support.registry.population.xroad.wire.RrElukohtRequest;
 import ee.taltech.ite4120.support.registry.population.xroad.wire.RrElukohtXmlResponse;
+import ee.taltech.ite4120.support.registry.http.WireTime;
 import ee.taltech.ite4120.support.registry.xroad.XRoadRegistryClient;
 
 /** Population Register over X-Road — a skeleton (see XRoadRegistryClient). */
@@ -21,6 +22,7 @@ public class XRoadPopulationRegistryAdapter implements PopulationRegistryAdapter
         if (wire == null || wire.isikukood() == null) {
             return null;
         }
-        return new PersonResidence(wire.isikukood(), wire.eesnimi(), wire.perekonnanimi(), wire.aadress(), wire.omavalitsus());
+        return new PersonResidence(wire.isikukood(), wire.eesnimi(), wire.perekonnanimi(), wire.aadress(), wire.omavalitsus(),
+                WireTime.parse(wire.andmedSeisuga()));
     }
 }

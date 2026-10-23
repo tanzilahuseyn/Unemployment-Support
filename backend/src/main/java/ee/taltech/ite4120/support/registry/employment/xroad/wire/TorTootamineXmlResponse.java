@@ -7,4 +7,5 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 @JacksonXmlRootElement(localName = "tootamineParingResponse", namespace = TorTootamineRequest.NS)
 public record TorTootamineXmlResponse(
         @JacksonXmlProperty(localName = "isikukood", namespace = TorTootamineRequest.NS) String isikukood,
-        @JacksonXmlProperty(localName = "aktiivneTootamine", namespace = TorTootamineRequest.NS) Boolean aktiivneTootamine) {}
+        @JacksonXmlProperty(localName = "aktiivneTootamine", namespace = TorTootamineRequest.NS) Boolean aktiivneTootamine,
+        @JacksonXmlProperty(localName = "andmedSeisuga", namespace = TorTootamineRequest.NS) String andmedSeisuga) {}

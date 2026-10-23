@@ -10,4 +10,5 @@ public record RrElukohtXmlResponse(
         @JacksonXmlProperty(localName = "eesnimi", namespace = RrElukohtRequest.NS) String eesnimi,
         @JacksonXmlProperty(localName = "perekonnanimi", namespace = RrElukohtRequest.NS) String perekonnanimi,
         @JacksonXmlProperty(localName = "aadress", namespace = RrElukohtRequest.NS) String aadress,
-        @JacksonXmlProperty(localName = "omavalitsus", namespace = RrElukohtRequest.NS) String omavalitsus) {}
+        @JacksonXmlProperty(localName = "omavalitsus", namespace = RrElukohtRequest.NS) String omavalitsus,
+        @JacksonXmlProperty(localName = "andmedSeisuga", namespace = RrElukohtRequest.NS) String andmedSeisuga) {}

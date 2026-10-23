@@ -3,6 +3,7 @@ package ee.taltech.ite4120.support.repository;
 import ee.taltech.ite4120.support.model.CheckStatus;
 import ee.taltech.ite4120.support.model.Decision;
 import ee.taltech.ite4120.support.model.Outcome;
+import ee.taltech.ite4120.support.model.ReasonCode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
@@ -23,12 +24,23 @@ public class DecisionRepository extends BaseRepository {
 
     public Long insert(Decision d) {
         return queryForObject("""
-                insert into support.decision (application_id, outcome, override, reason,
+                insert into support.decision (application_id, outcome, override, reason, reason_code, legal_basis,
+                                              rule_version, review_info,
                                               residence_check, unemployment_check, employment_check)
-                values (?, ?, ?, ?, ?, ?, ?)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 returning id""",
-                Long.class, d.getApplicationId(), d.getOutcome().name(), d.isOverride(), d.getReason(),
-                d.getResidenceCheck().name(), d.getUnemploymentCheck().name(), d.getEmploymentCheck().name());
+                Long.class, d.getApplicationId(), d.getOutcome().name(), d.isException(), d.getExplanation(),
+                d.getReasonCode() == null ? null : d.getReasonCode().name(), d.getLegalBasis(), d.getRuleVersion(),
+                d.getReviewInfo(), name(d.getResidenceCheck()), name(d.getUnemploymentCheck()),
+                name(d.getEmploymentCheck()));
+    }
+
+    private static String name(CheckStatus s) {
+        return s == null ? null : s.name();
+    }
+
+    private static CheckStatus status(String s) {
+        return s == null ? null : CheckStatus.valueOf(s);
     }
 
     private static Decision map(ResultSet rs, int row) throws SQLException {
@@ -36,11 +48,16 @@ public class DecisionRepository extends BaseRepository {
         d.setId(rs.getLong("id"));
         d.setApplicationId(rs.getLong("application_id"));
         d.setOutcome(Outcome.valueOf(rs.getString("outcome")));
-        d.setOverride(rs.getBoolean("override"));
-        d.setReason(rs.getString("reason"));
-        d.setResidenceCheck(CheckStatus.valueOf(rs.getString("residence_check")));
-        d.setUnemploymentCheck(CheckStatus.valueOf(rs.getString("unemployment_check")));
-        d.setEmploymentCheck(CheckStatus.valueOf(rs.getString("employment_check")));
+        d.setException(rs.getBoolean("override"));
+        String code = rs.getString("reason_code");
+        d.setReasonCode(code == null ? null : ReasonCode.valueOf(code));
+        d.setExplanation(rs.getString("reason"));
+        d.setLegalBasis(rs.getString("legal_basis"));
+        d.setRuleVersion(rs.getString("rule_version"));
+        d.setReviewInfo(rs.getString("review_info"));
+        d.setResidenceCheck(status(rs.getString("residence_check")));
+        d.setUnemploymentCheck(status(rs.getString("unemployment_check")));
+        d.setEmploymentCheck(status(rs.getString("employment_check")));
         d.setSysCreatedAt(rs.getObject("sys_created_at", OffsetDateTime.class));
         d.setSysCreatedBy(rs.getString("sys_created_by"));
         return d;

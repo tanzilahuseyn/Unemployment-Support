@@ -15,6 +15,12 @@
   <include file="support/db/changelog/support/01-support-type.sql"/>
   <include file="support/db/changelog/support/02-application.sql"/>
   <include file="support/db/changelog/support/03-decision.sql"/>
+  <include file="support/db/changelog/support/04-benefit-scheme.sql"/>
+  <include file="support/db/changelog/support/05-application-status.sql"/>
+  <include file="support/db/changelog/support/06-check-evidence.sql"/>
+  <include file="support/db/changelog/support/07-decision-reasons.sql"/>
+  <include file="support/db/changelog/support/08-audit-event.sql"/>
   <include file="support/db/changelog/support/90-demo-data.sql"/>
+  <include file="support/db/changelog/support/91-demo-valid-codes.sql"/>
 
 </databaseChangeLog>

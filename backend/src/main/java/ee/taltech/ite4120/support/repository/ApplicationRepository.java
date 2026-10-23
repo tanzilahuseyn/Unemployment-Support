@@ -3,14 +3,13 @@ package ee.taltech.ite4120.support.repository;
 import ee.taltech.ite4120.support.dto.ApplicationQueryParams;
 import ee.taltech.ite4120.support.model.Application;
 import ee.taltech.ite4120.support.model.ApplicationStatus;
-import ee.taltech.ite4120.support.model.SupportType;
+import ee.taltech.ite4120.support.model.BenefitScheme;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-import org.helex.commons.db.bean.PgBeanProcessor;
 import org.helex.commons.db.repo.BaseRepository;
 import org.helex.commons.db.sql.SqlBuilder;
 import org.helex.commons.exception.ApiClientException;
@@ -33,8 +32,6 @@ public class ApplicationRepository extends BaseRepository {
             "applicantIsikukood", "a.applicant_isikukood");
 
     private static final RowMapper<Application> MAPPER = ApplicationRepository::map;
-
-    private final PgBeanProcessor typeBp = new PgBeanProcessor(SupportType.class);
 
     public Application load(Long id) {
         List<Application> rows = jdbcTemplate.query(SELECT + "where a.id = ? and a.sys_status = 'A'", MAPPER, id);
@@ -78,14 +75,18 @@ public class ApplicationRepository extends BaseRepository {
         return sb;
     }
 
-    /** Is there another OPEN application of this person whose period overlaps [start, end]? */
-    public boolean openOverlapExists(String isikukood, LocalDate start, LocalDate end, Long excludeId) {
-        Integer n = queryForObject("""
-                select count(1) from support.application a
-                 where a.sys_status = 'A' and a.status = 'OPEN' and a.applicant_isikukood = ?
-                   and a.period_start <= ? and a.period_end >= ? and a.id <> coalesce(?, -1)""",
-                Integer.class, isikukood, end, start, excludeId);
-        return n != null && n > 0;
+    private static final String UNDECIDED = "('OPEN', 'PENDING_VERIFICATION', 'READY_FOR_DECISION')";
+
+    /** The id of another undecided application of this person whose period overlaps [start, end], or null. */
+    public Long undecidedOverlap(String isikukood, LocalDate start, LocalDate end, Long excludeId) {
+        List<Long> ids = jdbcTemplate.queryForList("""
+                select a.id from support.application a
+                 where a.sys_status = 'A' and a.status in """ + UNDECIDED + """
+                   and a.applicant_isikukood = ?
+                   and a.period_start <= ? and a.period_end >= ? and a.id <> coalesce(?, -1)
+                 order by a.id limit 1""",
+                Long.class, isikukood, end, start, excludeId);
+        return ids.isEmpty() ? null : ids.get(0);
     }
 
     public Long insert(Application a) {
@@ -97,36 +98,57 @@ public class ApplicationRepository extends BaseRepository {
                 a.getHouseholdSize());
     }
 
-    /** Updates an OPEN application only — a decided one is closed. */
-    public boolean updateOpen(Application a) {
+    /** Updates an undecided application; it goes back to OPEN, because verification must be redone. */
+    public boolean updateUndecided(Application a) {
         return jdbcTemplate.update("""
                 update support.application
-                   set support_type_code = ?, period_start = ?, period_end = ?, household_size = ?
-                 where id = ? and sys_status = 'A' and status = 'OPEN'""",
+                   set support_type_code = ?, period_start = ?, period_end = ?, household_size = ?, status = 'OPEN'
+                 where id = ? and sys_status = 'A' and status in """ + UNDECIDED,
                 a.getSupportTypeCode(), a.getPeriodStart(), a.getPeriodEnd(), a.getHouseholdSize(), a.getId()) == 1;
     }
 
-    /** Withdraw — a soft delete, OPEN applications only. */
-    public boolean withdrawOpen(Long id) {
+    /** Withdraw — a soft delete, undecided applications only. */
+    public boolean withdrawUndecided(Long id) {
         return jdbcTemplate.update(
-                "update support.application set sys_status = 'C' where id = ? and sys_status = 'A' and status = 'OPEN'",
+                "update support.application set sys_status = 'C' where id = ? and sys_status = 'A' and status in " + UNDECIDED,
                 id) == 1;
     }
 
-    /** OPEN → the decided status; false when it was no longer open (a concurrent decision). */
-    public boolean close(Long id, ApplicationStatus status) {
+    /** Moves an undecided application to another status; false when it is already decided (a concurrent decision). */
+    public boolean moveUndecided(Long id, ApplicationStatus status) {
         return jdbcTemplate.update(
-                "update support.application set status = ? where id = ? and sys_status = 'A' and status = 'OPEN'",
+                "update support.application set status = ? where id = ? and sys_status = 'A' and status in " + UNDECIDED,
                 status.name(), id) == 1;
     }
 
-    public List<SupportType> types() {
-        return getBeans("select t.* from support.support_type t order by t.name", typeBp);
+    /** The schemes effective on a day, by name. */
+    public List<BenefitScheme> schemes(LocalDate day) {
+        return jdbcTemplate.query("""
+                select t.* from support.support_type t
+                 where (t.effective_from is null or t.effective_from <= ?)
+                   and (t.effective_to is null or t.effective_to >= ?)
+                 order by t.name""", ApplicationRepository::mapScheme, day, day);
     }
 
-    public boolean typeExists(String code) {
-        Integer n = queryForObject("select count(1) from support.support_type where code = ?", Integer.class, code);
-        return n != null && n > 0;
+    public BenefitScheme scheme(String code) {
+        List<BenefitScheme> rows = jdbcTemplate.query(
+                "select t.* from support.support_type t where t.code = ?", ApplicationRepository::mapScheme, code);
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+
+    private static BenefitScheme mapScheme(ResultSet rs, int row) throws SQLException {
+        BenefitScheme s = new BenefitScheme();
+        s.setCode(rs.getString("code"));
+        s.setName(rs.getString("name"));
+        s.setLegalBasis(rs.getString("legal_basis"));
+        s.setRuleVersion(rs.getString("rule_version"));
+        s.setEffectiveFrom(rs.getObject("effective_from", LocalDate.class));
+        s.setEffectiveTo(rs.getObject("effective_to", LocalDate.class));
+        s.setRequiresResidence(rs.getBoolean("requires_residence"));
+        s.setRequiresUnemployment(rs.getBoolean("requires_unemployment"));
+        s.setRequiresNoEmployment(rs.getBoolean("requires_no_employment"));
+        s.setReviewInfo(rs.getString("review_info"));
+        return s;
     }
 
     private static Application map(ResultSet rs, int row) throws SQLException {

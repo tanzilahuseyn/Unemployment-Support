@@ -8,4 +8,5 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 public record TkTootuXmlResponse(
         @JacksonXmlProperty(localName = "isikukood", namespace = TkTootuRequest.NS) String isikukood,
         @JacksonXmlProperty(localName = "registreeritud", namespace = TkTootuRequest.NS) Boolean registreeritud,
-        @JacksonXmlProperty(localName = "registreerimiseKuupaev", namespace = TkTootuRequest.NS) String registreerimiseKuupaev) {}
+        @JacksonXmlProperty(localName = "registreerimiseKuupaev", namespace = TkTootuRequest.NS) String registreerimiseKuupaev,
+        @JacksonXmlProperty(localName = "andmedSeisuga", namespace = TkTootuRequest.NS) String andmedSeisuga) {}
