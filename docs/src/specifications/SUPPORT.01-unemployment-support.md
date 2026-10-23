@@ -1,6 +1,6 @@
 # SUPPORT.01 · Unemployment social support
 
-> **SUPPORT.01** · state **Proposed** (revision 2) · traces from [SUPPORT-US-001](../user-stories/SUPPORT-US-001.md)
+> **SUPPORT.01** · state **Confirmed** (revision 2) · traces from [SUPPORT-US-001](../user-stories/SUPPORT-US-001.md)
 > · source `backend/src/main/java/ee/taltech/ite4120/support/`, `backend/src/main/resources/support/db/changelog/`, `frontend/src/pages/support/`
 
 ## Description
