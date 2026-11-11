@@ -141,6 +141,7 @@ rows stay as history.
 | `GET /api/support/applications/{id}/decision` | the decision with its evidence | 404 |
 | `GET /api/support/applications/{id}/audit` | the application's audit events | 404 |
 | `GET /api/support/schemes` | effective benefit schemes with their rules | — |
+| `GET /api/support/reports/summary` | **reporting**: counts of active applications whose period overlaps `from`–`to` (both optional, `YYYY-MM-DD`): total, per status, per benefit scheme, decisions (approved, rejected, exceptions) and rejections per reason code. Aggregates only — no personal codes | 400 `to` before `from` |
 
 **Decision rules** (400 when broken):
 - **Approve:** only from `READY_FOR_DECISION`.
@@ -175,6 +176,8 @@ Every error is `application/problem+json`. All endpoints require
 | Screen | Element | Component | Rules |
 | --- | --- | --- | --- |
 | Application list `/support` | table, search, filters | `ResourceList` | as revision 1; status tags for all five statuses; "Benefit scheme" instead of "Support type" |
+| | detail panel | `ResourceList.detailView` | the selected application: personal code, scheme, period, household size, status, and its **stored** evidence per check (result, source, retrieved at). It makes no registry query; "Open application" goes to the application page |
+| | summary | `AppButtonSecondary` opening an antd `Modal` | the `/reports/summary` counts for all periods: per status, per scheme, decisions and rejection reasons |
 | Application page `/support/{id}` | application | `ResourceForm` + `useDataController` | Edit and Withdraw while undecided |
 | | verification | `AppCard` with **Verify** (`AppButtonPrimary`) and one row per required check: result `AppTag` (green `PASS`, red `FAIL`, grey `UNAVAILABLE`, orange `INCONCLUSIVE`), status detail, source, retrieved at, data as of; live name and address after a verification, marked as not stored | a check not required by the scheme is shown as "not required" |
 | | manual verification | per unresolved check: `Radio.Group` `PASS`/`FAIL`, `Input` source, `Input.TextArea` note, `AppButtonSecondary` | only for `UNAVAILABLE` / `INCONCLUSIVE` |
@@ -223,7 +226,14 @@ Every error is `application/problem+json`. All endpoints require
     events with the actor and application. No event contains a name or
     address. Updating or deleting an audit event is refused by the database.
 
-Tests 1–10 are backend tests (`SupportBusinessRulesIT`), with the three
+11. **The summary report counts the period's applications.**
+    Given three applications for March 2031 — one approved, one rejected as
+    `NOT_RESIDENT`, one pending verification — when the summary for
+    2031-03-01 to 2031-03-31 is requested, then it reports 3 in total, one per
+    status, 3 for `MONTHLY`, 1 approved, 1 rejected, 0 exceptions and 1
+    `NOT_RESIDENT`. And a summary with `to` before `from` is refused (400).
+
+Tests 1–11 are backend tests (`SupportBusinessRulesIT`), with the three
 registry adapters as test doubles.
 
 ## Outside the code
