@@ -7,6 +7,7 @@ import ee.taltech.ite4120.support.model.BenefitScheme;
 import ee.taltech.ite4120.support.model.CheckType;
 import ee.taltech.ite4120.support.model.Decision;
 import ee.taltech.ite4120.support.model.Evidence;
+import ee.taltech.ite4120.support.model.SummaryReport;
 import ee.taltech.ite4120.support.model.Verification;
 import ee.taltech.ite4120.support.service.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 import org.helex.commons.model.QueryResult;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** The unemployment support REST API — SUPPORT.01 revision 2, API. HTTP only; the rules are in ApplicationService. */
@@ -127,6 +130,17 @@ public class ApplicationController {
     @GetMapping("/applications/{id}/audit")
     public List<AuditEvent> audit(@PathVariable Long id) {
         return service.audit(id);
+    }
+
+    @Operation(summary = "Summary report: counts per status, scheme, decision and rejection reason",
+            description = "Covers the active applications whose period overlaps from–to (both optional, "
+                    + "YYYY-MM-DD). Aggregates only — no personal codes.")
+    @ApiResponse(responseCode = "200", description = "The counts")
+    @ApiResponse(responseCode = "400", description = "to is before from, or a date is malformed")
+    @GetMapping("/reports/summary")
+    public SummaryReport summary(@RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to) {
+        return service.summary(from, to);
     }
 
     @Operation(summary = "Effective benefit schemes with their legal basis and the facts their rules require")

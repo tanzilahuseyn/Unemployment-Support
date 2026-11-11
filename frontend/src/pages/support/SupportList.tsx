@@ -1,20 +1,72 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Select } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { Modal, Select } from 'antd';
+import { BarChartOutlined, PlusOutlined } from '@ant-design/icons';
 import {
   AppButtonPrimary,
+  AppButtonSecondary,
   AppLink,
   AppTag,
+  AppTimestamp,
   ResourceList,
   useAppNotification,
   type ResourceListColumn,
 } from '@helex/ui';
-import { statusColor, statusLabel, supportApi, type Application, type BenefitScheme } from '../../supportApi';
+import {
+  checkColor,
+  checkLabel,
+  reasonLabel,
+  statusColor,
+  statusLabel,
+  supportApi,
+  type Application,
+  type ApplicationStatus,
+  type BenefitScheme,
+  type Evidence,
+  type ReasonCode,
+  type SummaryReport,
+} from '../../supportApi';
+
+/** The summary report: aggregate counts only — the reporting operation, shown in a modal. */
+const SummaryView = ({ report, schemeName }: { report: SummaryReport; schemeName: (code: string) => string }) => {
+  const row = (label: string, n: number) => (
+    <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
+      <span>{label}</span>
+      <b>{n}</b>
+    </div>
+  );
+  return (
+    <div style={{ display: 'grid', gap: 14 }}>
+      {row('Applications in total', report.total)}
+      <div>
+        <b>By status</b>
+        {Object.entries(report.byStatus).map(([s, n]) => row(statusLabel[s as ApplicationStatus] ?? s, n))}
+      </div>
+      <div>
+        <b>By benefit scheme</b>
+        {Object.entries(report.byScheme).map(([s, n]) => row(schemeName(s), n))}
+      </div>
+      <div>
+        <b>Decisions</b>
+        {row('Approved', report.approved)}
+        {row('of which exceptions', report.exceptions)}
+        {row('Rejected', report.rejected)}
+      </div>
+      {Object.keys(report.rejectionReasons).length > 0 && (
+        <div>
+          <b>Rejection reasons</b>
+          {Object.entries(report.rejectionReasons).map(([r, n]) => row(reasonLabel[r as ReasonCode] ?? r, n))}
+        </div>
+      )}
+      <div style={{ opacity: 0.65, fontSize: 12 }}>Counts only — the report contains no personal codes.</div>
+    </div>
+  );
+};
 
 /**
  * The application list — SUPPORT.01 § UI, Application list. ResourceList with search
- * by personal code and filters for status and support type, like AnimalList.
+ * by personal code, filters for status and benefit scheme, a detail panel with the
+ * stored evidence, and the summary report — like AnimalList.
  */
 export const SupportList = () => {
   const navigate = useNavigate();
@@ -25,6 +77,26 @@ export const SupportList = () => {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string | undefined>();
   const [typeCode, setTypeCode] = useState<string | undefined>();
+  const [selected, setSelected] = useState<Application | null>(null);
+  const [evidence, setEvidence] = useState<Evidence[]>([]);
+  const [report, setReport] = useState<SummaryReport | null>(null);
+
+  // The detail panel shows the STORED evidence only — selecting a row never queries a registry.
+  useEffect(() => {
+    setEvidence([]);
+    if (selected?.id) {
+      supportApi
+        .evidence(selected.id)
+        .then(setEvidence)
+        .catch(() => setEvidence([]));
+    }
+  }, [selected]);
+
+  const openSummary = () =>
+    supportApi
+      .summary()
+      .then(setReport)
+      .catch((e) => notify.error('Could not load the summary', e.message));
 
   useEffect(() => {
     supportApi.schemes().then(setTypes).catch((e) => notify.error('Could not load benefit schemes', e.message));
@@ -92,6 +164,10 @@ export const SupportList = () => {
   ];
 
   return (
+    <>
+    <Modal open={!!report} title="Summary report" footer={null} onCancel={() => setReport(null)}>
+      {report && <SummaryView report={report} schemeName={typeName} />}
+    </Modal>
     <ResourceList<Application>
       title="Unemployment support applications"
       columns={columns}
@@ -126,10 +202,46 @@ export const SupportList = () => {
         },
       }}
       actions={
-        <AppButtonPrimary icon={<PlusOutlined />} onClick={() => navigate('/support/new')}>
-          Register application
-        </AppButtonPrimary>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <AppButtonSecondary icon={<BarChartOutlined />} onClick={openSummary}>
+            Summary
+          </AppButtonSecondary>
+          <AppButtonPrimary icon={<PlusOutlined />} onClick={() => navigate('/support/new')}>
+            Register application
+          </AppButtonPrimary>
+        </div>
       }
+      detailView={{
+        selectedRecord: selected,
+        onSelectedRecordChange: setSelected,
+        title: 'Application',
+        render: (a) => (
+          <div style={{ display: 'grid', gap: 8 }}>
+            <div>
+              <b>{a.applicantIsikukood}</b> <AppTag color={statusColor[a.status]}>{statusLabel[a.status]}</AppTag>
+            </div>
+            <div>{typeName(a.supportTypeCode)}</div>
+            <div>
+              {a.periodStart} – {a.periodEnd} · household {a.householdSize}
+            </div>
+            <b style={{ marginTop: 4 }}>Stored evidence</b>
+            {evidence.length === 0 && <div style={{ opacity: 0.65 }}>Not verified yet.</div>}
+            {evidence.map((e) => (
+              <div key={e.id}>
+                <div style={{ fontSize: 12 }}>{checkLabel[e.checkType]}</div>
+                <AppTag color={checkColor[e.result]}>{e.result}</AppTag>
+                {e.manual && <AppTag color="purple">MANUAL</AppTag>}
+                <div style={{ opacity: 0.65, fontSize: 12 }}>
+                  {e.source} · retrieved <AppTimestamp value={e.retrievedAt} fallback="—" />
+                </div>
+              </div>
+            ))}
+            <div style={{ opacity: 0.65, fontSize: 12 }}>No registry is queried from this panel.</div>
+            <AppButtonSecondary onClick={() => navigate(`/support/${a.id}`)}>Open application</AppButtonSecondary>
+          </div>
+        ),
+      }}
     />
+    </>
   );
 };

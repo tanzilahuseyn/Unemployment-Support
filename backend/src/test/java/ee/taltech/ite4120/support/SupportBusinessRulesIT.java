@@ -16,6 +16,7 @@ import ee.taltech.ite4120.support.model.DecisionCommand;
 import ee.taltech.ite4120.support.model.Evidence;
 import ee.taltech.ite4120.support.model.Outcome;
 import ee.taltech.ite4120.support.model.ReasonCode;
+import ee.taltech.ite4120.support.model.SummaryReport;
 import ee.taltech.ite4120.support.model.Verification;
 import ee.taltech.ite4120.support.dto.ApplicationQueryParams;
 import ee.taltech.ite4120.support.registry.RegistryUnavailableException;
@@ -301,6 +302,51 @@ class SupportBusinessRulesIT {
                 .isInstanceOf(DataAccessException.class);
         assertThatThrownBy(() -> jdbc.update("delete from support.audit_event where application_id = ?", a.getId()))
                 .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void theSummaryReportCountsThePeriodsApplications() {
+        // Given three MONTHLY applications for March 2031: approved, rejected NOT_RESIDENT, pending
+        LocalDate start = LocalDate.of(2031, 3, 1);
+        LocalDate end = LocalDate.of(2031, 3, 31);
+
+        String approved = code("4900101010");
+        allChecksPass(approved);
+        Application a1 = service.create(application(approved, "MONTHLY", start, end));
+        service.verify(a1.getId());
+        service.decide(a1.getId(), approve());
+
+        String rejected = code("4900101011");
+        allChecksPass(rejected);
+        when(population.lookup(rejected)).thenReturn(
+                new PersonResidence(rejected, "Test", "Person", "Testi 1, Tartu", "Tartu", DATA_AS_OF));
+        Application a2 = service.create(application(rejected, "MONTHLY", start, end));
+        service.verify(a2.getId());
+        service.decide(a2.getId(), reject(ReasonCode.NOT_RESIDENT, "Lives in Tartu"));
+
+        String pending = code("4900101012");
+        allChecksPass(pending);
+        when(unemployment.lookup(pending)).thenThrow(new RegistryUnavailableException("Töötukassa unreachable"));
+        Application a3 = service.create(application(pending, "MONTHLY", start, end));
+        service.verify(a3.getId());
+
+        // When the summary for March 2031 is requested
+        SummaryReport r = service.summary(start, end);
+
+        // Then it counts exactly these three
+        assertThat(r.total()).isEqualTo(3);
+        assertThat(r.byStatus()).containsEntry("APPROVED", 1L).containsEntry("REJECTED", 1L)
+                .containsEntry("PENDING_VERIFICATION", 1L);
+        assertThat(r.byScheme()).containsEntry("MONTHLY", 3L);
+        assertThat(r.approved()).isEqualTo(1);
+        assertThat(r.rejected()).isEqualTo(1);
+        assertThat(r.exceptions()).isZero();
+        assertThat(r.rejectionReasons()).containsEntry("NOT_RESIDENT", 1L);
+
+        // And a summary with `to` before `from` is refused
+        assertThatThrownBy(() -> service.summary(end, start))
+                .isInstanceOf(ApiClientException.class)
+                .hasMessageContaining("to must not be before from");
     }
 
     /** Lives in Tallinn, registered unemployed, no active employment. Unknown codes are not found. */

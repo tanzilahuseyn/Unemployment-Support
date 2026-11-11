@@ -89,6 +89,19 @@ export interface AuditEvent {
   detail?: string | null;
 }
 
+/** The summary report: aggregate counts only, never personal codes. */
+export interface SummaryReport {
+  from?: string | null;
+  to?: string | null;
+  total: number;
+  byStatus: Record<string, number>;
+  byScheme: Record<string, number>;
+  approved: number;
+  rejected: number;
+  exceptions: number;
+  rejectionReasons: Record<string, number>;
+}
+
 export interface DecisionCommand {
   outcome: Outcome;
   exception: boolean;
@@ -136,6 +149,13 @@ export const supportApi = {
   decision: (id: number): Promise<Decision> => get(`/applications/${id}/decision`),
   audit: (id: number): Promise<AuditEvent[]> => get(`/applications/${id}/audit`),
   schemes: (): Promise<BenefitScheme[]> => get('/schemes'),
+  /** The reporting operation; both dates optional (YYYY-MM-DD). */
+  summary: (from?: string, to?: string): Promise<SummaryReport> => {
+    const q = new URLSearchParams();
+    if (from) q.set('from', from);
+    if (to) q.set('to', to);
+    return get(`/reports/summary${q.toString() ? `?${q}` : ''}`);
+  },
 };
 
 export const requires = (s: BenefitScheme | undefined, t: CheckType): boolean =>
