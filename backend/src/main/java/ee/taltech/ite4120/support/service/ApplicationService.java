@@ -11,12 +11,15 @@ import ee.taltech.ite4120.support.model.Decision;
 import ee.taltech.ite4120.support.model.DecisionCommand;
 import ee.taltech.ite4120.support.model.Evidence;
 import ee.taltech.ite4120.support.model.Outcome;
+import ee.taltech.ite4120.support.model.SummaryReport;
 import ee.taltech.ite4120.support.model.Verification;
 import ee.taltech.ite4120.support.repository.ApplicationRepository;
 import ee.taltech.ite4120.support.repository.DecisionRepository;
 import ee.taltech.ite4120.support.repository.EvidenceRepository;
+import ee.taltech.ite4120.support.repository.ReportRepository;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -40,14 +43,17 @@ public class ApplicationService {
     private final DecisionRepository decisions;
     private final RegistryCheckService registries;
     private final AuditService audit;
+    private final ReportRepository reports;
 
     public ApplicationService(ApplicationRepository applications, EvidenceRepository evidence,
-            DecisionRepository decisions, RegistryCheckService registries, AuditService audit) {
+            DecisionRepository decisions, RegistryCheckService registries, AuditService audit,
+            ReportRepository reports) {
         this.applications = applications;
         this.evidence = evidence;
         this.decisions = decisions;
         this.registries = registries;
         this.audit = audit;
+        this.reports = reports;
     }
 
     @Transactional
@@ -251,6 +257,27 @@ public class ApplicationService {
     public List<AuditEvent> audit(Long id) {
         require(id);
         return audit.forApplication(id);
+    }
+
+    /**
+     * The summary report for applications whose period overlaps from–to (either may be
+     * null). Aggregates only: it never returns a personal code.
+     */
+    public SummaryReport summary(LocalDate from, LocalDate to) {
+        if (from != null && to != null && to.isBefore(from)) {
+            throw new ApiClientException("to must not be before from");
+        }
+        Map<String, Long> d = reports.decisionCounts(from, to);
+        Map<String, Long> reasons = new LinkedHashMap<>();
+        d.forEach((k, n) -> {
+            if (k.startsWith("reason:")) {
+                reasons.put(k.substring("reason:".length()), n);
+            }
+        });
+        return new SummaryReport(from, to, reports.total(from, to),
+                reports.countBy("status", from, to), reports.countBy("support_type_code", from, to),
+                d.getOrDefault("outcome:APPROVED", 0L), d.getOrDefault("outcome:REJECTED", 0L),
+                d.getOrDefault("exception", 0L), reasons);
     }
 
     public List<BenefitScheme> schemes() {
