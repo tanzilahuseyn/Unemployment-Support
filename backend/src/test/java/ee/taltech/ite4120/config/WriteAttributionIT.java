@@ -2,8 +2,8 @@ package ee.taltech.ite4120.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import ee.taltech.ite4120.animals.model.Animal;
-import ee.taltech.ite4120.animals.service.AnimalService;
+import ee.taltech.ite4120.support.model.Application;
+import ee.taltech.ite4120.support.service.ApplicationService;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -36,7 +36,7 @@ class WriteAttributionIT {
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     @Autowired
-    AnimalService animals;
+    ApplicationService applications;
 
     @AfterEach
     void signOut() {
@@ -46,14 +46,14 @@ class WriteAttributionIT {
     @Test
     void rowsRememberWhoCreatedAndWhoLastChangedThem() {
         signIn("alice");
-        Animal created = animals.create(animal("IT-WHO-001"));
+        Application created = applications.create(application("39001010011", 2040, 1));
         assertThat(created.getSysCreatedBy()).isEqualTo("alice");
         assertThat(created.getSysModifiedBy()).isEqualTo("alice");
 
         signIn("bob");
-        Animal update = animal("IT-WHO-001");
-        update.setName("Renamed by Bob");
-        Animal updated = animals.update(created.getId(), update);
+        Application update = application("39001010011", 2040, 1);
+        update.setHouseholdSize(3);
+        Application updated = applications.update(created.getId(), update);
         assertThat(updated.getSysCreatedBy()).as("creation is history — it keeps the first author").isEqualTo("alice");
         assertThat(updated.getSysModifiedBy()).isEqualTo("bob");
     }
@@ -61,7 +61,7 @@ class WriteAttributionIT {
     @Test
     void outsideARequestTheApplicationItselfIsTheAuthor() {
         SecurityContextHolder.clearContext();
-        Animal created = animals.create(animal("IT-WHO-002"));
+        Application created = applications.create(application("49002020024", 2040, 2));
         assertThat(created.getSysCreatedBy()).isEqualTo(JdbcConfig.APPLICATION_USER);
     }
 
@@ -70,12 +70,15 @@ class WriteAttributionIT {
                 new UsernamePasswordAuthenticationToken(user, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))));
     }
 
-    private static Animal animal(String registryCode) {
-        Animal a = new Animal();
-        a.setRegistryCode(registryCode);
-        a.setName("Attributed animal");
-        a.setSpeciesCode("CAT");
-        a.setBirthDate(LocalDate.of(2020, 1, 1));
+    /** A monthly application for one calendar month — far from the demo data's periods. */
+    private static Application application(String personalCode, int year, int month) {
+        LocalDate start = LocalDate.of(year, month, 1);
+        Application a = new Application();
+        a.setApplicantIsikukood(personalCode);
+        a.setSupportTypeCode("MONTHLY");
+        a.setPeriodStart(start);
+        a.setPeriodEnd(start.plusMonths(1).minusDays(1));
+        a.setHouseholdSize(1);
         return a;
     }
 }

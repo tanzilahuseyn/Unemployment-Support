@@ -37,7 +37,7 @@ import {
 
 const CHECKS: CheckType[] = ['RESIDENCE', 'UNEMPLOYMENT', 'EMPLOYMENT'];
 
-/** A date input that accepts what the form store holds — see DateField in AnimalDetail for why. */
+/** A date input that accepts what the form store holds (a string or a dayjs value). */
 const DateField = ({ value, onChange }: { value?: unknown; onChange?: (next: string | null) => void }) => (
   <DatePicker
     style={{ width: '100%' }}
@@ -298,7 +298,7 @@ const AuditCard = ({ events }: { events: AuditEvent[] }) => (
 
 /**
  * One application — SUPPORT.01 revision 2 § UI, Application page. ResourceForm +
- * useDataController like AnimalDetail; the sidebar holds verification, the decision
+ * useDataController; the sidebar holds verification, the decision
  * (a form while undecided, read-only after), the audit log and metadata.
  */
 export const SupportDetail = () => {

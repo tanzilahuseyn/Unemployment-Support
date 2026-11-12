@@ -4,10 +4,6 @@ auth:
   mock:
     enabled: true          # Authorization: Bearer <any-username> signs you in
 
-animals:
-  owner-registry:
-    mock-server: true      # this app serves /mock-registry itself — works offline
-
 support:
   registry:
     mock-server: true      # this app serves /mock-registry/{population,unemployment,employment}

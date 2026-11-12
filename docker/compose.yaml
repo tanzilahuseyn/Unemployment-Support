@@ -13,18 +13,18 @@ services:
   postgres:
     image: postgres:18-alpine
     environment:
-      POSTGRES_DB: animals
-      POSTGRES_USER: ${ANIMALS_DB_USER:-animals}
-      POSTGRES_PASSWORD: ${ANIMALS_DB_PASSWORD:-animals}
+      POSTGRES_DB: support
+      POSTGRES_USER: ${SUPPORT_DB_USER:-support}
+      POSTGRES_PASSWORD: ${SUPPORT_DB_PASSWORD:-support}
     ports:
-      - "${ANIMALS_PG_PORT:-18520}:5432"
+      - "${SUPPORT_PG_PORT:-18520}:5432"
     volumes:
       # postgres:18+ images keep PGDATA under /var/lib/postgresql/<major>/docker,
       # so the volume mounts the parent dir (mounting the old .../data path would
       # silently persist nothing).
       - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${ANIMALS_DB_USER:-animals} -d animals"]
+      test: ["CMD-SHELL", "pg_isready -U ${SUPPORT_DB_USER:-support} -d support"]
       interval: 5s
       timeout: 3s
       retries: 12

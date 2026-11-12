@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Master changelog for the animals register.
+  Master changelog for the Unemployment Support application.
 
   The FIRST include is not ours: it ships inside the published
   org.helex.emr:commons-db-core jar and creates the shared `core` schema —
@@ -8,8 +8,8 @@
   (core.sys_columns, core.create_table_metadata) and the session functions.
   Our own DDL below depends on it, which is why it must come first.
 
-  Students: add your component as ONE include here, pointing at your own
-  <yours>/db/changelog/<yours>/changelog.xml — exactly like the animals line.
+  Each component is ONE include here, pointing at its own
+  <component>/db/changelog/<component>/changelog.xml.
 -->
 <databaseChangeLog
   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
@@ -20,9 +20,6 @@
   <!-- Shared core schema, from the published commons-db-core jar. Idempotent. -->
   <include file="core-db/changelog/changelog.xml"/>
 
-  <!-- The worked example component. -->
-  <include file="animals/db/changelog/animals/changelog.xml"/>
-
   <!-- Our component: unemployment social support. -->
   <include file="support/db/changelog/support/changelog.xml"/>
 
@@ -30,7 +27,7 @@
        library module lives beside the template, gitignored (see .gitignore).
        includeAll tolerates a missing directory where include would fail; depth 1
        picks up only that component's own master changelog, which then includes
-       its changesets in order. Students: yours is a plain include, like animals. -->
+       its changesets in order. Our own component is a plain include, like support. -->
   <includeAll path="library/db/changelog/" maxDepth="1" errorIfMissingOrEmpty="false"/>
 
 </databaseChangeLog>

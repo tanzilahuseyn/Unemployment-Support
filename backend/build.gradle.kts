@@ -1,4 +1,4 @@
-// ITE4120 course template backend — the ANIMALS REGISTER worked example.
+// ITE4120 backend — Unemployment Support (SUPPORT.01).
 //
 // This build consumes the Helex platform exclusively as published artifacts:
 //   org.helex.emr:*   from maven.pkg.github.com/helex-solutions/emr-repo

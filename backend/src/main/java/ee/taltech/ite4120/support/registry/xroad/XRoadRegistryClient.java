@@ -12,7 +12,7 @@ import org.helex.forge.xroad.XRoadServiceId;
 
 /**
  * The real X-Road transport on {@code org.helex.forge:forge-xroad}, shared by the
- * three X-Road adapters. A SKELETON by design, like animals' XRoadOwnerRegistryAdapter:
+ * three X-Road adapters. A SKELETON by design:
  * it builds a correct envelope and fails fast with a clear error when no security
  * server is reachable, which in this course there is not.
  */

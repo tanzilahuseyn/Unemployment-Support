@@ -1,4 +1,4 @@
-package ee.taltech.ite4120.animals.api;
+package ee.taltech.ite4120.config;
 
 import java.util.List;
 import java.util.Map;

@@ -66,7 +66,7 @@ const SummaryView = ({ report, schemeName }: { report: SummaryReport; schemeName
 /**
  * The application list — SUPPORT.01 § UI, Application list. ResourceList with search
  * by personal code, filters for status and benefit scheme, a detail panel with the
- * stored evidence, and the summary report — like AnimalList.
+ * stored evidence, and the summary report.
  */
 export const SupportList = () => {
   const navigate = useNavigate();

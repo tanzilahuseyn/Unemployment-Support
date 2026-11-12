@@ -1,4 +1,4 @@
-// The support component's API client — thin fetch wrappers, like api.ts for animals.
+// The support component's API client — thin fetch wrappers over the backend.
 // SUPPORT.01 revision 2: verification with evidence, manual verification, reasoned
 // decisions and the audit log.
 

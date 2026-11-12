@@ -8,9 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * <p>Lives in the ROOT package on purpose: Spring Boot scans the package of this
  * class and everything below it, so every component under
- * {@code ee.taltech.ite4120.<component>} — animals, library, yours — is found
- * without registering anything. (It used to sit inside {@code animals}, which
- * silently limited the scan to that one component.)
+ * {@code ee.taltech.ite4120.<component>} — here {@code support} — is found
+ * without registering anything.
  */
 @SpringBootApplication
 public class Application {
