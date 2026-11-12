@@ -1,4 +1,4 @@
-// ITE4120 course template — animals register.
+// ITE4120 — Unemployment Support.
 //
 // A single, standalone Gradle build. Every Helex dependency resolves as a PUBLISHED
 // Maven artifact from GitHub Packages — there is no monorepo checkout beside this
@@ -7,7 +7,7 @@
 // Credentials: a GitHub token with `read:packages`, either as environment variables
 // (GITHUB_ACTOR + GITHUB_TOKEN) or as Gradle properties (gpr.user + gpr.key in
 // ~/.gradle/gradle.properties). See README.md § Prerequisites.
-rootProject.name = "animals-register"
+rootProject.name = "unemployment-support"
 
 dependencyResolutionManagement {
     repositories {

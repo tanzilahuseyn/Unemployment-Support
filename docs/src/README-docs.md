@@ -29,6 +29,5 @@ current — the same generated-never-drawn principle as the ER diagram. Endpoint
 answer only with `Authorization: Bearer <user>`; the *Authorize* button in
 Swagger UI takes any username in local mode.
 
-The worked example — the **animals register** — has one story and one specification.
-Read them before writing your own: your component follows the same shape, in a
-different domain.
+The component — **unemployment social support** — has one user story and one
+specification, SUPPORT.01. Read them before changing the code.

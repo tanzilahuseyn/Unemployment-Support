@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 /**
  * The three forge-xroad skeletons are not expected to reach a security server in this
  * course — but each must fail FAST and CLEARLY, as RegistryUnavailableException, so the
- * check becomes UNAVAILABLE. Same contract as animals' XRoadAdapterSkeletonTest.
+ * check becomes UNAVAILABLE.
  */
 class XRoadSkeletonsTest {
 

@@ -22,5 +22,6 @@
   <include file="support/db/changelog/support/08-audit-event.sql"/>
   <include file="support/db/changelog/support/90-demo-data.sql"/>
   <include file="support/db/changelog/support/91-demo-valid-codes.sql"/>
+  <include file="support/db/changelog/support/09-drop-animal-example.sql"/>
 
 </databaseChangeLog>

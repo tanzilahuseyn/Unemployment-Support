@@ -1,8 +1,5 @@
 import type { ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AnimalList } from './pages/AnimalList';
-import { AnimalCreate } from './pages/AnimalCreate';
-import { AnimalDetail } from './pages/AnimalDetail';
 import { SupportList } from './pages/support/SupportList';
 import { SupportCreate } from './pages/support/SupportCreate';
 import { SupportDetail } from './pages/support/SupportDetail';
@@ -12,7 +9,7 @@ import { SupportDetail } from './pages/support/SupportDetail';
  * exporting `routes: ReactElement[]` (a list of <Route>s) from
  * `pages/<component>/routes.tsx`. The glob is resolved at build time and is
  * simply empty when no such folder exists — the lecturer's private library
- * module lives there, gitignored. Students: add your <Route>s below, like animals.
+ * module lives there, gitignored. Our own routes are listed below.
  */
 const componentRoutes = Object.values(
   import.meta.glob<{ routes: ReactElement[] }>('./pages/*/routes.tsx', { eager: true }),
@@ -21,9 +18,6 @@ const componentRoutes = Object.values(
 export const App = () => (
   <Routes>
     <Route path="/" element={<Navigate to="/support" replace />} />
-    <Route path="/animals" element={<AnimalList />} />
-    <Route path="/animals/new" element={<AnimalCreate />} />
-    <Route path="/animals/:id" element={<AnimalDetail />} />
     <Route path="/support" element={<SupportList />} />
     <Route path="/support/new" element={<SupportCreate />} />
     <Route path="/support/:id" element={<SupportDetail />} />

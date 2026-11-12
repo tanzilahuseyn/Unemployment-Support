@@ -1,6 +1,5 @@
-package ee.taltech.ite4120.animals.api;
+package ee.taltech.ite4120.config;
 
-import ee.taltech.ite4120.animals.ownerregistry.OwnerRegistryException;
 import org.helex.commons.exception.ApiClientException;
 import org.helex.commons.exception.ApiException;
 import org.helex.commons.exception.ConflictException;
@@ -64,14 +63,5 @@ public class ApiErrorHandler {
     private static String detail(ApiException e) {
         String message = e.getMessage();
         return message == null ? null : message.replaceFirst("^[\\w-]+: ", "");
-    }
-
-    /** The registry being down is an upstream failure, not the caller's fault: 502. */
-    @ExceptionHandler(OwnerRegistryException.class)
-    public ProblemDetail registryFailure(OwnerRegistryException e) {
-        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_GATEWAY);
-        pd.setTitle("Owner registry unavailable");
-        pd.setDetail(e.getMessage());
-        return pd;
     }
 }

@@ -26,7 +26,7 @@ public class OpenApiConfig {
     public OpenAPI apiDescription() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Animals Register — ITE4120 course template")
+                        .title("Unemployment Support — ITE4120")
                         .description("""
                                 Every /api endpoint requires `Authorization: Bearer <username>`. \
                                 In local mock mode any username works — click Authorize and type one.""")

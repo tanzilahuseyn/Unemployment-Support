@@ -18,7 +18,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * Data access for applications — the shape of AnimalRepository. Rows are mapped by
+ * Data access for applications. Rows are mapped by
  * hand because the status column maps onto an enum.
  */
 @Repository

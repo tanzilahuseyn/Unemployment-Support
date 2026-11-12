@@ -13,7 +13,7 @@ import java.time.Duration;
 /**
  * Plain HTTPS+JSON transport shared by the three HTTP adapters: GET one wire record,
  * 404 is a miss ({@code null}), anything else that is not 200 is the registry being
- * unavailable. Same rules as animals' HttpOwnerRegistryAdapter, written once.
+ * unavailable. The same rules for all three registries, written once.
  */
 public class RegistryHttpClient {
 

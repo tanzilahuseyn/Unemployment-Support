@@ -6,7 +6,7 @@ alwaysApply: false
 
 Rules: [AGENTS.md](mdc:AGENTS.md) § Process rules 5–6. Worked example, changeset
 by changeset: [docs/src/liquibase-guide.md](mdc:docs/src/liquibase-guide.md).
-Every file under `animals/db/changelog/` is the reference shape.
+Every file under `support/db/changelog/` is the reference shape.
 
 Check before committing — it fails closed:
 

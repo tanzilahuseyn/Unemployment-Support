@@ -6,7 +6,7 @@ alwaysApply: false
 
 Rules: [AGENTS.md](mdc:AGENTS.md) § Architecture conventions (UI) and § Known
 pitfalls (two Reacts, `MockAuthProvider` probes, `useAppNotification` identity).
-Reference pages: `frontend/src/pages/AnimalList.tsx`, `AnimalCreate.tsx`.
+Reference pages: `frontend/src/pages/support/SupportList.tsx`, `SupportCreate.tsx`, `SupportDetail.tsx`.
 
 Typecheck before a PR:
 

@@ -75,9 +75,8 @@ Spec first, tests second, implementation third (see `AGENTS.md`):
 | Registry adapters (HTTP, X-Road skeleton, mocks) | `.../support/registry/` (`population`, `unemployment`, `employment`) |
 | UI: React + @helex/ui | `frontend/src/pages/support/`, `frontend/src/supportApi.ts` |
 
-The template's worked example, the **animals register**, is still included
-(`/animals`, package `ee.taltech.ite4120.animals`) as the pattern this
-component follows.
+The course template's animal register example has been removed: this repository
+contains only the unemployment support component.
 
 ## Run it
 

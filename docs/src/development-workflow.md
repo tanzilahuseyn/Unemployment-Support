@@ -15,7 +15,7 @@ The last section of every specification is **business tests**, in plain language
 given / when / then. They become executable tests **before** the implementation.
 When an agent writes the implementation, the failing test is your only independent
 evidence that it solved *your* problem. See
-`backend/src/test/java/.../AnimalBusinessRulesIT.java` — every test there quotes
+`backend/src/test/java/.../SupportBusinessRulesIT.java` — every test there quotes
 the specification.
 
 ## 3. Recreatable
