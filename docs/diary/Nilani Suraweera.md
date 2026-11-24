@@ -1,8 +1,8 @@
 # Work diary · Nilani Suraweera · legislation and policy analysis
 
 Component: **SUPPORT.01, unemployment social support decided from X-Road registry checks**.
-Document: *User Story and Policy Analysis* (Word), the group's legal and policy review
-of user story SUPPORT-US-001.
+Document: [*User Story and Policy Analysis*](../User%20Story%20and%20Policy%20Analysis.pdf),
+the group's legal and policy review of user story SUPPORT-US-001.
 
 This diary was drafted from the finished document and the repository history.
 Marks like **[Nilani: …]** are facts only Nilani knows: the dates, the hours and the
