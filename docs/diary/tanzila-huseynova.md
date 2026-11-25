@@ -5,7 +5,7 @@ Agent: Claude Code (Claude Opus 5.5) in the Claude desktop app.
 
 Written with the agent from the session history. Hours are estimated from commit
 and pull request times, rounded to a quarter hour, with time added for reading,
-discussing and reviewing. Total: **6.75 hours**.
+discussing and reviewing. Total: **11.25 hours**.
 
 | Date | Hours | What I asked the agent | What it got wrong or missed | How it was corrected |
 | --- | --- | --- | --- | --- |
@@ -23,6 +23,15 @@ discussing and reviewing. Total: **6.75 hours**.
 | 23.10.2026 | 0.25 | Rewrite the business tests for revision 2 before the code. | Nothing wrong. All ten tests failed to compile first. | — |
 | 23.10.2026 | 1 | Implement revision 2: evidence, pending verification, manual verification, reasoned decisions and the audit log. | The tests could not run: Docker Desktop was paused. The agent first thought it might be a startup problem. | It read the real error and asked me to unpause Docker. After that, all ten tests passed. |
 | 23.10.2026 | 0.5 | Check revision 2 in the real app and merge it. | Upgrading my existing database failed: an old rejection had no reason code, which revision 2 requires. The audit log was also in the wrong order. | Old rejections are marked `OTHER` with their text kept, and the log is sorted by time. The browser check then passed (Eve: unavailable → manual verification → approved), and pull request #5 was merged after the checks were green. |
+| 11.11.2026 | 0.25 | Check the project against the course's submission requirements. | Two gaps were found: there was no reporting operation, and the list page had no detail panel, which the course's required minimum asks for. | I asked it to close both gaps. Defence and peer review were noted as my own tasks. |
+| 11.11.2026 | 1 | Add the summary report and the list's detail panel (pull request #7). | Spec first and test 11 first, as before. The new test failed with an SQL error: a Java text block dropped a space, giving `anda.sys_status`. Docker Desktop was paused again, so the tests could not start. | The agent fixed the SQL and asked me to resume Docker. All 19 tests passed, and the report and panel were checked in the browser before merging. |
+| 11.11.2026 | 0.25 | Give me an open link to share the app with a friend. | It asked how I wanted to share it instead of guessing. While restarting the frontend, it also stopped the backend's start script by accident: the stop command matched both. | The backend itself kept running; the agent checked this before going on. The link was tested from outside before I got it, with a warning that it works only while my laptop is on. |
+| 12.11.2026 | 1 | I saw animal documents in my repository. Remove them. | The animal example was the teacher's template, and my code used some of its shared parts. It asked how far to go before deleting. | I chose to remove all animal parts (pull request #8). The shared parts moved to `config`, the database was renamed `support`, and the manuals were rewritten. One comment in an old migration still says "animals": the course rules forbid editing a migration that has already run. 16/16 tests passed. |
+| 12.11.2026 | 0.5 | Explain what an API is and what my APIs are; then write a summary of the whole project for my teacher, also as a PDF. | The first draft of the summary said 14 endpoints and 13 changesets. | The agent counted them in the code before publishing: 13 endpoints and 16 changesets. |
+| 23.11.2026 | 0.5 | Make a PowerPoint about my API. | It could not see the finished slides: Keynote and PowerPoint did not respond, and the macOS preview drew shapes in the wrong places. | It checked in code that nothing overflows or overlaps, shortened two long titles, and told me to look through the slides in PowerPoint before presenting. |
+| 24.11.2026 | 0.5 | Make a diary for the policy side, from Nilani's *User Story and Policy Analysis*. | It found no record of how the analysis was written, so it would not invent dates, hours or prompts. It also found signs of AI drafting in the document: a duplicated heading, an empty section, a missing section 5 and a stray chat line. | It marked those places for Nilani to fill in, put the diary in the empty file she had created (renamed to `.md` so GitHub shows the tables), and linked her PDF (pull request #9). |
+| 24.11.2026 | 0.25 | Nilani could not open my app link. | The old link had stopped working because the app had been shut down. | The agent restarted the app with a new link and tested it from outside. |
+| 25.11.2026 | 0.25 | Is anything about the project left out? | This diary stopped at 23 October, and the README did not mention the summary report, the detail panel, the diaries or the policy analysis. | Both were updated in one pull request. Still open: Nilani's diary details, the defence and the peer review. |
 
 ## What I learned about working with the agent
 
@@ -37,3 +46,9 @@ discussing and reviewing. Total: **6.75 hours**.
   the template's "animals" user, and the audit log order.
 - **Merge only after the checks pass**, and check that the change actually
   reached `main`.
+- **Check the numbers before presenting.** The summary's first counts were
+  wrong; counting in the code fixed them.
+- **A diary must not be invented.** When the agent did not know how Nilani
+  worked, it left the gaps for her instead of guessing.
+- **Keep the diary up to date as you go.** Filling in weeks later relies on
+  commit times and memory.
