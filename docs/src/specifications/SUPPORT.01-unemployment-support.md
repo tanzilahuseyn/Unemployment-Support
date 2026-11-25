@@ -66,7 +66,8 @@ or `INCONCLUSIVE`.
 ## Data model
 
 Revision 1's changesets 01–03 and 90 are released and stay unchanged. Revision 2
-adds changesets 04–08.
+adds changesets 04–08 and the demo correction 91. Changeset 09 removes a schema
+left over from the course template; it changes nothing in the `support` schema.
 
 | Table | Field | Type | Rules |
 | --- | --- | --- | --- |
