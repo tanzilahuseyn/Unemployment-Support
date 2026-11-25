@@ -6,7 +6,7 @@ the group's legal and policy review of user story SUPPORT-US-001.
 
 
 ## Part 1 · Writing the analysis
-| Date | Time (Estonia) | Author | Prompt / Activity | Analysis and Findings | Outcome / Reflection | Hours Spent |
+| Date | Time (Estonia) | What I asked the agent | What it got wrong or missed | How it was corrected | Hours Spent |
 |---|---|---|---|---|---|---:|
 | 22 September 2026 | 09:30 (approx.) | Nilani | Review the gaps in the Estonian public services sector and identify a suitable e-governance project. | Used Gemini Pro to identify key gaps in Estonian public services and explored municipal procurement and blood donation coordination solutions. | Following team discussion, the municipal procurement solution was considered too complex, while the blood donation solution was rejected due to its complex legal and policy implications. The unemployment benefit registration portal was selected for further analysis. | 2.0 |
 | 22 September 2026 | 14:00 (approx.) | Nilani | Review user story SUPPORT-US-001 (revision 1) against Estonian and EU law, and identify the main legal, policy and technical gaps. | The initial story treated registry checks as absolute conditions, meaning an unavailable registry could block an application. Validation relied only on the 11-digit personal identification code, and the system retained only a pass/fail result for each check. | Identified the critical principle that **"cannot verify" must not mean "not eligible."** The review also highlighted missing checksum validation, insufficient evidence records and the need to distinguish technical verification failures from eligibility decisions. | 2.5 |
