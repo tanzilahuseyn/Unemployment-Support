@@ -20,6 +20,12 @@ registry lookups over X-Road, imitated locally.
   Each scheme names its legal basis, rule version and the registry facts its
   rules require.
 - Search by personal code (audited); filter by status and benefit scheme.
+- A **detail panel** on the list shows the selected application's stored
+  evidence without querying any registry.
+- A **summary report** (`GET /api/support/reports/summary?from=&to=`, the
+  Summary button on the list) counts applications per status and scheme,
+  decisions, exceptions and rejection reasons. It returns counts only, never
+  personal codes.
 - Edit or withdraw an application while it is undecided. A decided application
   can no longer change.
 - A person can have only one undecided application for overlapping periods.
@@ -65,6 +71,13 @@ Spec first, tests second, implementation third (see `AGENTS.md`):
 - User story: [`docs/src/user-stories/SUPPORT-US-001.md`](docs/src/user-stories/SUPPORT-US-001.md)
 - Specification: [`docs/src/specifications/SUPPORT.01-unemployment-support.md`](docs/src/specifications/SUPPORT.01-unemployment-support.md)
   covers the data model, API, UI, failure policy and business tests.
+- Legislation and policy analysis (the group's legal review that led to
+  revision 2): [`docs/User Story and Policy Analysis.pdf`](docs/User%20Story%20and%20Policy%20Analysis.pdf)
+
+## Work diaries
+
+- Tanzila Huseynova, development: [`docs/diary/tanzila-huseynova.md`](docs/diary/tanzila-huseynova.md)
+- Nilani Suraweera, legislation and policy analysis: [`docs/diary/Nilani Suraweera.md`](docs/diary/Nilani%20Suraweera.md)
 
 ## Where the code is
 
