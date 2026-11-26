@@ -5,7 +5,7 @@ Agent: Claude Code (Claude Opus 5.5) in the Claude desktop app.
 
 Written with the agent from the session history. Hours are estimated from commit
 and pull request times, rounded to a quarter hour, with time added for reading,
-discussing and reviewing. Total: **11.25 hours**.
+discussing and reviewing. Total: **13.5 hours**.
 
 | Date | Hours | What I asked the agent | What it got wrong or missed | How it was corrected |
 | --- | --- | --- | --- | --- |
@@ -32,6 +32,11 @@ discussing and reviewing. Total: **11.25 hours**.
 | 24.11.2026 | 0.5 | Make a diary for the policy side, from Nilani's *User Story and Policy Analysis*. | It found no record of how the analysis was written, so it would not invent dates, hours or prompts. It also found signs of AI drafting in the document: a duplicated heading, an empty section, a missing section 5 and a stray chat line. | It marked those places for Nilani to fill in, put the diary in the empty file she had created (renamed to `.md` so GitHub shows the tables), and linked her PDF (pull request #9). |
 | 24.11.2026 | 0.25 | Nilani could not open my app link. | The old link had stopped working because the app had been shut down. | The agent restarted the app with a new link and tested it from outside. |
 | 25.11.2026 | 0.25 | Is anything about the project left out? | This diary stopped at 23 October, and the README did not mention the summary report, the detail panel, the diaries or the policy analysis. | Both were updated in one pull request. Still open: Nilani's diary details, the defence and the peer review. |
+| 25.11.2026 | 0.25 | Fix the spec gap and delete the 11 old branches. | The spec named changesets 04–08 but not 91 or 09. One old branch had a commit that was not on `main`. | The spec now names every changeset (pull request #11). Before deleting, the agent checked that commit: it was the 18 October README, which had reached `main` through pull request #3, so nothing was lost. |
+| 25.11.2026 | 0.5 | What should I do for the defence? Then: slides for my part (the app, the API, X-Road and the demo). | It still could not see the finished slides on my computer. | It checked in code that nothing overflows or overlaps, added speaker notes to every slide, and opened the deck in PowerPoint for me to look through. |
+| 26.11.2026 | 0.25 | Give Nilani a new app link. | Docker and the app had stopped, so the old link was dead. | It started Docker, the app and a new link, and tested the link from outside. |
+| 26.11.2026 | 1 | Change the website: a darker background, a title a citizen understands, "number of family members" instead of "household", and name, surname and father's name after the personal code (pull request #12). | Darkening the page colour changed nothing visible: the white area was the card colour. Names in the list would have broken our privacy rule, and the Estonian Population Register has no father's name. | It darkened the card colour instead. It explained the privacy conflict and gave options. We chose the first name and surname next to the personal code on the application page, looked up live and never stored, plus the date of birth from the code. Spec first and business test 12 first; 17/17 tests passed. Father's name was left out, because the personal code already tells people with the same name apart. |
+| 26.11.2026 | 0.25 | Update my slides, the summary and this diary for the new numbers (14 endpoints, 12 business tests). | The files used to build the slides had been deleted from the agent's temporary folder. | It edited my saved slides directly, kept the changes I had made in PowerPoint, and saved a backup of each deck first. |
 
 ## What I learned about working with the agent
 
@@ -52,3 +57,6 @@ discussing and reviewing. Total: **11.25 hours**.
   worked, it left the gaps for her instead of guessing.
 - **Keep the diary up to date as you go.** Filling in weeks later relies on
   commit times and memory.
+- **A small wish can clash with a design rule.** Showing names in the list
+  sounded simple, but it went against our privacy rule. The agent raised it
+  before building, and we found a way that keeps both.
