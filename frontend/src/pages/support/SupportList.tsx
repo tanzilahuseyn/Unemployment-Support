@@ -25,6 +25,7 @@ import {
   type Evidence,
   type ReasonCode,
   type SummaryReport,
+  applicationNo,
   birthDateFromCode,
 } from '../../supportApi';
 
@@ -124,12 +125,12 @@ export const SupportList = () => {
 
   const columns: ResourceListColumn<Application>[] = [
     {
-      key: 'applicantIsikukood',
-      title: 'Personal code',
-      dataIndex: 'applicantIsikukood',
+      key: 'applicationNo',
+      title: 'Application no.',
+      dataIndex: 'id',
       locked: true,
-      // The identifier is the way into the record: it links to the application.
-      render: (code: string, a: Application) => (
+      // The application number is the way into the record: it links to the application.
+      render: (_: number, a: Application) => (
         <AppLink
           href={`/support/${a.id}`}
           onClick={(e) => {
@@ -138,10 +139,11 @@ export const SupportList = () => {
             navigate(`/support/${a.id}`);
           }}
         >
-          {code}
+          {applicationNo(a)}
         </AppLink>
       ),
     },
+    { key: 'applicantIsikukood', title: 'Personal code', dataIndex: 'applicantIsikukood' },
     {
       key: 'birthDate',
       title: 'Date of birth',
@@ -225,8 +227,9 @@ export const SupportList = () => {
         render: (a) => (
           <div style={{ display: 'grid', gap: 8 }}>
             <div>
-              <b>{a.applicantIsikukood}</b> <AppTag color={statusColor[a.status]}>{statusLabel[a.status]}</AppTag>
+              <b>{applicationNo(a)}</b> <AppTag color={statusColor[a.status]}>{statusLabel[a.status]}</AppTag>
             </div>
+            <div>Personal code {a.applicantIsikukood}</div>
             <div>{typeName(a.supportTypeCode)}</div>
             <div>
               {a.periodStart} – {a.periodEnd} · family members: {a.householdSize}

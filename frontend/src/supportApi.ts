@@ -212,6 +212,14 @@ export const reasonCites: Partial<Record<ReasonCode, CheckType>> = {
 };
 
 /** YYYY-MM-DD → DD.MM.YYYY, the way dates are written in Estonia. */
+/**
+ * The application number people read and say: the scheme's first letter and the id,
+ * M-1000 for monthly support and O-1002 for one-off support. Display only; the API
+ * and the database keep the plain id.
+ */
+export const applicationNo = (a: Pick<Application, 'id' | 'supportTypeCode'>): string =>
+  `${(a.supportTypeCode || '?').charAt(0).toUpperCase()}-${a.id}`;
+
 export const formatDate = (iso: string): string => {
   const [y, m, d] = iso.split('-');
   return `${d}.${m}.${y}`;
