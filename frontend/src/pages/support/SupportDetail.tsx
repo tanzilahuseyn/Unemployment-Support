@@ -405,29 +405,34 @@ export const SupportDetail = () => {
       fields: [
         {
           name: 'applicantIsikukood',
-          label: 'Personal code',
+          label: 'Applicant',
           type: 'custom',
           modeOverride: 'view',
           tooltip: 'The applicant is identified by the personal code. The name comes live from the Population Register and is not stored',
           render: ({ value }) => <span>{String(value ?? '')}</span>,
           viewRender: (v) => (
-            <>
-              <div>{String(v ?? '—')}</div>
-              {applicant && (
-                <div>
-                  {applicant.nameAvailable ? (
-                    <b>
-                      {applicant.firstName} {applicant.lastName}
-                    </b>
-                  ) : (
-                    <Muted>Name not available right now</Muted>
-                  )}
-                  {' · born '}
-                  {formatDate(applicant.birthDate)}
+            // One fact per line, label on the left, so the applicant is easy to read.
+            <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 16, rowGap: 4 }}>
+              <span style={{ opacity: 0.65 }}>Personal code</span>
+              <span>{String(v ?? '—')}</span>
+              <span style={{ opacity: 0.65 }}>Name</span>
+              {!applicant ? (
+                <span>…</span>
+              ) : applicant.nameAvailable ? (
+                <b>
+                  {applicant.firstName} {applicant.lastName}
+                </b>
+              ) : (
+                <Muted>Not available right now</Muted>
+              )}
+              <span style={{ opacity: 0.65 }}>Date of birth</span>
+              <span>{applicant ? formatDate(applicant.birthDate) : '…'}</span>
+              {applicant?.nameAvailable && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <Muted>Name from the Population Register, not stored</Muted>
                 </div>
               )}
-              {applicant?.nameAvailable && <Muted>Name from the Population Register, not stored</Muted>}
-            </>
+            </div>
           ),
         },
         {
