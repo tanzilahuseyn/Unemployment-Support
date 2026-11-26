@@ -63,7 +63,9 @@ the application in **pending verification**. The worker can resolve it by
 **Private by design:** only the personal code, the application, a minimal
 evidence record per check and the decision are stored. Names, addresses and
 full registry answers are looked up live, shown once, and never stored or
-logged.
+logged. The application page shows the applicant's first name and surname next
+to the personal code, looked up live from the Population Register (each lookup
+is audited), and the list shows the date of birth read from the personal code.
 
 ## Specification
 

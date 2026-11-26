@@ -39,6 +39,19 @@ public class RegistryCheckService {
         this.municipality = municipality;
     }
 
+    /** A live name lookup: the name, or none, and the outcome for the audit log. */
+    public record NameLookup(String firstName, String lastName, String outcome) {}
+
+    /** The person's first name and surname from the Population Register, for display only. */
+    public NameLookup name(String isikukood) {
+        try {
+            PersonResidence p = population.lookup(isikukood);
+            return p == null ? new NameLookup(null, null, "NOT_FOUND") : new NameLookup(p.firstName(), p.lastName(), "FOUND");
+        } catch (RegistryUnavailableException e) {
+            return new NameLookup(null, null, "UNAVAILABLE");
+        }
+    }
+
     /** Unsaved evidence per required check, plus the live person details for the screen. */
     public record Result(Map<CheckType, Evidence> evidence, Person person) {}
 

@@ -89,6 +89,14 @@ export interface AuditEvent {
   detail?: string | null;
 }
 
+/** The applicant next to the personal code: the name is live and NOT stored. */
+export interface Applicant {
+  firstName?: string | null;
+  lastName?: string | null;
+  birthDate: string;
+  nameAvailable: boolean;
+}
+
 /** The summary report: aggregate counts only, never personal codes. */
 export interface SummaryReport {
   from?: string | null;
@@ -148,6 +156,8 @@ export const supportApi = {
   decide: (id: number, cmd: DecisionCommand): Promise<Decision> => post(`/applications/${id}/decision`, cmd),
   decision: (id: number): Promise<Decision> => get(`/applications/${id}/decision`),
   audit: (id: number): Promise<AuditEvent[]> => get(`/applications/${id}/audit`),
+  /** Live name lookup (audited, not stored) plus the date of birth from the code. */
+  person: (id: number): Promise<Applicant> => get(`/applications/${id}/person`),
   schemes: (): Promise<BenefitScheme[]> => get('/schemes'),
   /** The reporting operation; both dates optional (YYYY-MM-DD). */
   summary: (from?: string, to?: string): Promise<SummaryReport> => {
@@ -199,6 +209,19 @@ export const reasonCites: Partial<Record<ReasonCode, CheckType>> = {
   NOT_RESIDENT: 'RESIDENCE',
   NOT_REGISTERED_UNEMPLOYED: 'UNEMPLOYMENT',
   ACTIVE_EMPLOYMENT: 'EMPLOYMENT',
+};
+
+/** YYYY-MM-DD → DD.MM.YYYY, the way dates are written in Estonia. */
+export const formatDate = (iso: string): string => {
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+};
+
+/** The date of birth encoded in a personal code, as DD.MM.YYYY; null when the code is not valid. */
+export const birthDateFromCode = (code: string): string | null => {
+  if (!isValidPersonalCode(code)) return null;
+  const year = 1800 + Math.floor((Number(code[0]) - 1) / 2) * 100 + Number(code.slice(1, 3));
+  return `${code.slice(5, 7)}.${code.slice(3, 5)}.${year}`;
 };
 
 /** The official Estonian personal code check: format, birth date and checksum (as the backend). */

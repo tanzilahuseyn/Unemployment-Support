@@ -25,6 +25,7 @@ import {
   type Evidence,
   type ReasonCode,
   type SummaryReport,
+  birthDateFromCode,
 } from '../../supportApi';
 
 /** The summary report: aggregate counts only — the reporting operation, shown in a modal. */
@@ -140,6 +141,12 @@ export const SupportList = () => {
           {code}
         </AppLink>
       ),
+    },
+    {
+      key: 'birthDate',
+      title: 'Date of birth',
+      dataIndex: 'applicantIsikukood',
+      render: (code: string) => birthDateFromCode(code) ?? '—',
     },
     {
       key: 'supportTypeCode',
