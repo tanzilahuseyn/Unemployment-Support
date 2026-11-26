@@ -177,7 +177,7 @@ Every error is `application/problem+json`. All endpoints require
 | Screen | Element | Component | Rules |
 | --- | --- | --- | --- |
 | Application list `/support` | table, search, filters | `ResourceList` | as revision 1; status tags for all five statuses; "Benefit scheme" instead of "Support type" |
-| | detail panel | `ResourceList.detailView` | the selected application: personal code, scheme, period, household size, status, and its **stored** evidence per check (result, source, retrieved at). It makes no registry query; "Open application" goes to the application page |
+| | detail panel | `ResourceList.detailView` | the selected application: personal code, scheme, period, number of family members, status, and its **stored** evidence per check (result, source, retrieved at). It makes no registry query; "Open application" goes to the application page |
 | | summary | `AppButtonSecondary` opening an antd `Modal` | the `/reports/summary` counts for all periods: per status, per scheme, decisions and rejection reasons |
 | Application page `/support/{id}` | application | `ResourceForm` + `useDataController` | Edit and Withdraw while undecided |
 | | verification | `AppCard` with **Verify** (`AppButtonPrimary`) and one row per required check: result `AppTag` (green `PASS`, red `FAIL`, grey `UNAVAILABLE`, orange `INCONCLUSIVE`), status detail, source, retrieved at, data as of; live name and address after a verification, marked as not stored | a check not required by the scheme is shown as "not required" |
@@ -185,6 +185,10 @@ Every error is `application/problem+json`. All endpoints require
 | | decision | `AppCard`: `Radio.Group` Approve / Reject, `Checkbox` Exception, `Select` reason code, `Input.TextArea` explanation, `AppButtonPrimary` Decide | Approve enabled only when `READY_FOR_DECISION`; Exception only when a required check is `FAIL`; after deciding, read-only with legal basis, rule version and review information |
 | | audit | `AppCard` list of the application's audit events | read-only |
 | Register form `/support/new` | as revision 1 | | personal code validated with checksum; scheme options from `/schemes` |
+
+Wording on the screens is plain language a citizen understands: the list is
+titled **"Applications for support after losing a job"**, and household size is
+shown as **"Number of family members"** (the API field stays `householdSize`).
 
 ## Business tests
 

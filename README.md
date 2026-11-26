@@ -16,7 +16,8 @@ registry lookups over X-Road, imitated locally.
 
 **Applications** (`/support`)
 - Register an application with the applicant's personal code (validated with
-  birth date and checksum), **benefit scheme**, period and household size.
+  birth date and checksum), **benefit scheme**, period and number of family members
+  (household size).
   Each scheme names its legal basis, rule version and the registry facts its
   rules require.
 - Search by personal code (audited); filter by status and benefit scheme.

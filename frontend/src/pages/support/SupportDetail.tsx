@@ -430,7 +430,7 @@ export const SupportDetail = () => {
         },
         {
           name: 'householdSize',
-          label: 'Household size',
+          label: 'Number of family members',
           type: 'custom',
           tooltip: 'Context only — no rule uses it',
           rules: [{ required: true }],

@@ -154,7 +154,7 @@ export const SupportList = () => {
       render: (_: string, a: Application) =>
         a.periodStart === a.periodEnd ? a.periodStart : `${a.periodStart} – ${a.periodEnd}`,
     },
-    { key: 'householdSize', title: 'Household', dataIndex: 'householdSize' },
+    { key: 'householdSize', title: 'Family members', dataIndex: 'householdSize' },
     {
       key: 'status',
       title: 'Status',
@@ -169,7 +169,7 @@ export const SupportList = () => {
       {report && <SummaryView report={report} schemeName={typeName} />}
     </Modal>
     <ResourceList<Application>
-      title="Unemployment support applications"
+      title="Applications for support after losing a job"
       columns={columns}
       dataSource={rows}
       rowKey="id"
@@ -222,7 +222,7 @@ export const SupportList = () => {
             </div>
             <div>{typeName(a.supportTypeCode)}</div>
             <div>
-              {a.periodStart} – {a.periodEnd} · household {a.householdSize}
+              {a.periodStart} – {a.periodEnd} · family members: {a.householdSize}
             </div>
             <b style={{ marginTop: 4 }}>Stored evidence</b>
             {evidence.length === 0 && <div style={{ opacity: 0.65 }}>Not verified yet.</div>}

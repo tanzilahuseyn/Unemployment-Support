@@ -69,7 +69,7 @@ export const SupportCreate = () => {
         <Form.Item name="period" label="Period" rules={[{ required: true }]} extra="The end may not be before the start">
           <DatePicker.RangePicker style={{ width: '100%' }} />
         </Form.Item>
-        <Form.Item name="householdSize" label="Household size" rules={[{ required: true }]}>
+        <Form.Item name="householdSize" label="Number of family members" rules={[{ required: true }]}>
           <InputNumber min={1} max={20} style={{ width: '100%' }} />
         </Form.Item>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
