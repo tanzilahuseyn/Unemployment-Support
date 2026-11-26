@@ -35,9 +35,15 @@ public class MockBearerAuthFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         if (mockEnabled && header != null && header.startsWith("Bearer ")) {
             String username = header.substring("Bearer ".length()).trim();
-            if (!username.isEmpty()) {
+            // `citizen:<personal code>` is a citizen (a demo of the state login, TARA);
+            // any other name is a social worker. A citizen with an invalid code is not
+            // signed in at all, so the request answers 401.
+            String role = CitizenIdentity.isCitizen(username) ? "ROLE_CITIZEN" : "ROLE_USER";
+            boolean valid = !username.isEmpty()
+                    && (!CitizenIdentity.isCitizen(username) || CitizenIdentity.personalCode(username) != null);
+            if (valid) {
                 var auth = new UsernamePasswordAuthenticationToken(
-                        username, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                        username, null, List.of(new SimpleGrantedAuthority(role)));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }

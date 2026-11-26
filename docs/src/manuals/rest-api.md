@@ -63,6 +63,20 @@ curl -s -H "$H" 'http://localhost:18440/api/support/reports/summary?from=2026-10
 curl -s -H "$H" -X DELETE -i http://localhost:18440/api/support/applications/<id>   # 204, soft delete
 ```
 
+**Citizens** use their own small API, `/api/citizen` (`CitizenController`). In
+mock mode the token `citizen:<personal code>` stands in for the state login;
+the personal code always comes from the token, never from the body. A citizen
+calling the worker API, or a worker calling the citizen API, gets 403
+(`SecurityConfig`); a citizen token with an invalid personal code gets 401.
+
+```bash
+C='Authorization: Bearer citizen:37911052485'
+curl -s -H "$C" http://localhost:18440/api/citizen/me
+curl -s -H "$C" -H 'Content-Type: application/json' \
+     -d '{"supportTypeCode":"MONTHLY","periodStart":"2027-02-01","periodEnd":"2027-02-28","householdSize":1}' \
+     http://localhost:18440/api/citizen/applications     # 201 with the application number
+```
+
 ## The list contract
 
 Every list endpoint takes the platform's `QueryParams` plus its own filters:

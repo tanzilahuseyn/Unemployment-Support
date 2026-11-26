@@ -91,6 +91,33 @@ public class ApplicationService {
         return require(id);
     }
 
+    /**
+     * A citizen's online application (SUPPORT.01, Citizen e-service): the same rules
+     * and audit as {@link #create}; the caller passes the personal code from the login.
+     * The overlap conflict is said in words for the citizen.
+     */
+    @Transactional
+    public Application applyOnline(Application a) {
+        validate(a);
+        if (applications.undecidedOverlap(a.getApplicantIsikukood(), a.getPeriodStart(), a.getPeriodEnd(), null) != null) {
+            throw new ConflictException("application", "you already have an application for this period that is "
+                    + "still being processed — a social worker will contact you about it");
+        }
+        Long id = applications.insert(a);
+        audit.log("CREATE", id, a.getSupportTypeCode() + " · online application");
+        return require(id);
+    }
+
+    /**
+     * The signed-in citizen: name live from the Population Register (never stored),
+     * date of birth from the personal code. Audited without the name.
+     */
+    public Applicant citizen(String personalCode) {
+        RegistryCheckService.NameLookup name = registries.name(personalCode);
+        audit.log("REGISTRY_QUERY", null, CheckType.RESIDENCE.source() + ": name lookup for the online application " + name.outcome());
+        return new Applicant(name.firstName(), name.lastName(), PersonalCode.birthDate(personalCode), "FOUND".equals(name.outcome()));
+    }
+
     @Transactional
     public Application update(Long id, Application a) {
         Application existing = requireUndecided(id);

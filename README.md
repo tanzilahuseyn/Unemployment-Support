@@ -31,6 +31,17 @@ registry lookups over X-Road, imitated locally.
   can no longer change.
 - A person can have only one undecided application for overlapping periods.
 
+**Citizen e-service** (`/citizen`)
+- A person can **apply online** for themselves: benefit scheme, period and
+  number of family members. No documents are needed; the city checks the
+  registries.
+- The login is a **demo** of the state login (ID-card, Mobile-ID, Smart-ID):
+  choose a demo person or type a personal code. The personal code always comes
+  from the login, so nobody can apply for someone else.
+- Online applications get the same validation and audit as the worker's, and
+  show up in the worker's list as `OPEN`, created by `citizen:<personal code>`.
+- Citizens may use only `/api/citizen/**`, workers only the rest of the API.
+
 **Verification over X-Road** queries only the registries the scheme requires:
 
 | Check | Registry | Passes when |
@@ -47,7 +58,9 @@ data timestamp.
 
 **Unverifiable is not ineligible.** An unavailable or inconclusive check puts
 the application in **pending verification**. The worker can resolve it by
-**manual verification** from another authorised source, with a note.
+**manual verification** from another authorised source, with a note. A check
+the registry did not answer is also **retried automatically every hour**; the
+retry never decides.
 
 **Decisions**
 - Approve when every required fact is verified positive.
@@ -110,14 +123,16 @@ cd frontend && npm ci && cd ..
 
 | What | Where |
 | --- | --- |
-| Applications | http://localhost:18640/support |
+| Applications (social worker) | http://localhost:18640/support |
+| Apply online (citizen) | http://localhost:18640/citizen |
 | Swagger UI, the live API contract | http://localhost:18440/swagger-ui.html |
 | Imitated registries | http://localhost:18440/mock-registry/population/38703140274 (also `/unemployment/…` and `/employment/…`) |
 | PostgreSQL | localhost:18520 (`scripts/psql` for a shell) |
 | Documentation book | `scripts/run-docs` → http://localhost:18740 (needs mdBook) |
 
 You are signed in automatically as a mock user. The API accepts
-`Authorization: Bearer <any-username>` in local mode. The municipality the
+`Authorization: Bearer <any-username>` in local mode for a social worker, and
+`Authorization: Bearer citizen:<personal code>` for a citizen. The municipality the
 component serves is `support.municipality` in `application.yml` (Tallinn).
 
 **Demo data** (loaded locally under the Liquibase `demo` context): one
@@ -146,7 +161,8 @@ Each line runs from the project folder:
 python3 scripts/check_changesets.py # Liquibase formatted-SQL rules
 ```
 
-`SupportBusinessRulesIT` holds the specification's ten business tests:
+`SupportBusinessRulesIT` holds the specification's business tests 1–13, and
+`CitizenEServiceIT` test 14:
 - valid Estonian personal code, including the checksum
 - period order
 - one undecided application per person for overlapping periods
@@ -158,6 +174,10 @@ python3 scripts/check_changesets.py # Liquibase formatted-SQL rules
 - a decision is final
 - searches, registry queries and decisions are audited without payloads, and
   the audit log is append-only
+- the summary report counts the period's applications
+- the applicant's name is looked up live and never stored
+- unavailable checks are retried automatically
+- a citizen applies online only for themselves, and each role uses only its own API
 
 The three registries are test doubles, so each case is set up exactly.
 `XRoadSkeletonsTest` checks that each X-Road adapter fails fast and clearly

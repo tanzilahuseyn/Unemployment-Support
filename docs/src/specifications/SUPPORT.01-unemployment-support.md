@@ -64,6 +64,30 @@ or `INCONCLUSIVE`.
 - A rejection that does not cite a registry fact (`INCOMPLETE_APPLICATION`,
   `OTHER`) is possible from any undecided status.
 
+## Citizen e-service
+
+A person can also **apply online**, without visiting the city. The citizen side
+is small on purpose: it only takes the application. Verification and the
+decision stay with the social worker, exactly as for an application the worker
+registers.
+
+- **Login.** In production the citizen logs in through the state login (TARA:
+  ID-card, Mobile-ID or Smart-ID), which gives the personal code. The course
+  has no TARA, so a **demo login** stands in for it: the person picks a demo
+  person or types a personal code. It is clearly marked as a demo.
+- **Two roles.** In mock auth, a token `citizen:<personal code>` (a valid
+  Estonian code) signs in a **citizen**; any other name is a **worker**.
+  Citizens may use only `/api/citizen/**`; workers may use only the rest of
+  `/api/**`. The wrong role answers 403, a citizen token with an invalid code 401.
+- **Only for yourself.** The personal code always comes from the login, never
+  from the request body, so a citizen cannot apply for someone else.
+- **Same rules.** An online application is validated, checked for overlap and
+  audited exactly like one the worker registers, and starts as `OPEN`. The
+  actor in `sys_created_by` and the audit log is `citizen:<personal code>`, so
+  the worker sees that it came in online.
+- **The name** on the citizen's pages is looked up live from the Population
+  Register, as on the worker's page, and is never stored.
+
 ## Data model
 
 Revision 1's changesets 01–03 and 90 are released and stay unchanged. Revision 2
@@ -158,6 +182,9 @@ Each person keeps the same case:
 | `GET /api/support/applications/{id}/person` | the applicant's first name and surname, looked up **live** from the Population Register, and the date of birth read from the personal code. **Not stored.** Writes a `REGISTRY_QUERY` audit event without the name. An unreachable registry or an unknown person answers without a name (`nameAvailable: false`), never an error | 404 |
 | `GET /api/support/schemes` | effective benefit schemes with their rules | — |
 | `GET /api/support/reports/summary` | **reporting**: counts of active applications whose period overlaps `from`–`to` (both optional, `YYYY-MM-DD`): total, per status, per benefit scheme, decisions (approved, rejected, exceptions) and rejections per reason code. Aggregates only — no personal codes | 400 `to` before `from` |
+| `GET /api/citizen/me` | **citizen**: the signed-in person's personal code, first name and surname (live from the Population Register, **not stored**) and date of birth. Writes a `REGISTRY_QUERY` audit event without the name | 401 · 403 a worker |
+| `GET /api/citizen/schemes` | **citizen**: the effective benefit schemes, as `/api/support/schemes` | 401 · 403 a worker |
+| `POST /api/citizen/applications` | **citizen**: apply online. Body `supportTypeCode`, `periodStart`, `periodEnd`, `householdSize`; the personal code comes from the login. Same validation and audit as the worker's register. **201** with the application number, scheme, period, number of family members and status | 400 validation · 401 · 403 a worker · 409 the person already has an undecided application for an overlapping period, in words for the citizen |
 
 **Decision rules** (400 when broken):
 - **Approve:** only from `READY_FOR_DECISION`.
@@ -210,6 +237,9 @@ Every error is `application/problem+json`. All endpoints require
 | | decision | `AppCard`: `Radio.Group` Approve / Reject, `Checkbox` Exception, `Select` reason code, `Input.TextArea` explanation, `AppButtonPrimary` Decide | Approve enabled only when `READY_FOR_DECISION`; Exception only when a required check is `FAIL`; after deciding, read-only with legal basis, rule version and review information |
 | | audit | `AppCard` list of the application's audit events | read-only |
 | Register form `/support/new` | as revision 1 | | personal code validated with checksum; scheme options from `/schemes` |
+| Citizen login `/citizen` | demo login | `AppCard`, buttons per demo person, `Input` for a personal code, `AppButtonPrimary` | marked "Demo — in the real service this is the state login (ID-card, Mobile-ID, Smart-ID)"; the code is checked with the checksum before login |
+| Citizen application `/citizen/apply` | form | `AppCard` + antd `Form` | greets the person by name (live, not stored); the personal code is shown, not editable; benefit scheme, period, number of family members; Log out |
+| Citizen confirmation `/citizen/done/{id}` | receipt | `AppCard` | the application number, scheme, period and family members, and what happens next in plain words: a social worker checks the registries, no documents are needed, and a registry that does not answer never leads to a rejection |
 
 Wording on the screens is plain language a citizen understands: the list is
 titled **"Assignment of unemployment support payment"** (the city's support, not
@@ -282,8 +312,19 @@ shown as **"Number of family members"** (the API field stays `householdSize`).
     starting `automatic retry`, and is not decided; B and C get no new
     evidence.
 
+14. **A citizen applies online, only for themselves.**
+    Given a citizen signed in as `citizen:X`, when they apply online for
+    MONTHLY support with a body that also names another personal code Y, then
+    it answers 201, the application belongs to X (not Y), is `OPEN`, and both
+    `sys_created_by` and its `CREATE` audit event name `citizen:X`. Applying
+    again for an overlapping period answers 409. A citizen calling
+    `/api/support/applications` gets 403, a worker calling
+    `/api/citizen/applications` gets 403, and a citizen token with an invalid
+    personal code gets 401.
+
 Tests 1–13 are backend tests (`SupportBusinessRulesIT`), with the three
-registry adapters as test doubles.
+registry adapters as test doubles. Test 14 is an HTTP test (`CitizenEServiceIT`),
+because roles are enforced at the HTTP layer.
 
 ## Outside the code
 

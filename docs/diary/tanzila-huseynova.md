@@ -5,7 +5,7 @@ Agent: Claude Code (Claude Opus 5.5) in the Claude desktop app.
 
 Written with the agent from the session history. Hours are estimated from commit
 and pull request times, rounded to a quarter hour, with time added for reading,
-discussing and reviewing. Total: **15.25 hours**.
+discussing and reviewing. Total: **16.75 hours**.
 
 | Date | Hours | What I asked the agent | What it got wrong or missed | How it was corrected |
 | --- | --- | --- | --- | --- |
@@ -41,6 +41,7 @@ discussing and reviewing. Total: **15.25 hours**.
 | 26.11.2026 | 0.25 | Change the list title to "Assignment of unemployment insurance payment". | "Unemployment insurance" is the Unemployment Insurance Fund's own benefit, not the city's support this app handles. The policy analysis stresses the difference, so a teacher could call it the wrong benefit. | The agent explained this before changing anything. I chose **"Assignment of unemployment support payment"** (pull request #15), and the spec says why. |
 | 26.11.2026 | 0.25 | Give me a presentation for my part and the text I should say. | One line on slide 9 still mentioned the template's "animals" user. | It replaced that line, put the full talk text into the speaker notes, and made a printable script with timings and likely questions. |
 | 26.11.2026 | 1 | How can I improve my app? Then: build the automatic retry of checks a registry did not answer (pull request #17). | The new business test first failed because of its own setup: it re-stubbed a registry double that was set to throw. A retry could also have overwritten a worker's manual verification. | Spec first, then business test 13, then the code. The retry runs every hour, only for pending applications with an `UNAVAILABLE` check and no manual verification, and never decides. Contradicting registries are left to a person. 18/18 tests passed. |
+| 26.11.2026 | 1.5 | Create the citizen side of the website (pull request #18). I chose online applying and a demo login. | The agent asked first what citizens may do and how they log in, since the course has no state login. Its new test failed once because of its own check: the demo data already had an application for the "other person" in the test. While trying the form in the browser, the date picker sent the form before the family members were changed. | Spec first, then business test 14 over real HTTP calls, then the code: a citizen role whose personal code comes only from the login, a citizen API, and three pages (login, apply, confirmation). The test check was narrowed to its own period. It tried the whole flow in the browser and checked that the worker sees the new case, created by `citizen:…`. The README's test list, which still said ten tests, was updated. 19/19 tests passed. |
 
 ## What I learned about working with the agent
 

@@ -3,6 +3,9 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { SupportList } from './pages/support/SupportList';
 import { SupportCreate } from './pages/support/SupportCreate';
 import { SupportDetail } from './pages/support/SupportDetail';
+import { CitizenLogin } from './pages/citizen/CitizenLogin';
+import { CitizenApply } from './pages/citizen/CitizenApply';
+import { CitizenDone } from './pages/citizen/CitizenDone';
 
 /**
  * Components that may be ABSENT from this checkout register their routes by
@@ -21,6 +24,10 @@ export const App = () => (
     <Route path="/support" element={<SupportList />} />
     <Route path="/support/new" element={<SupportCreate />} />
     <Route path="/support/:id" element={<SupportDetail />} />
+    {/* The citizen e-service — SUPPORT.01, Citizen e-service */}
+    <Route path="/citizen" element={<CitizenLogin />} />
+    <Route path="/citizen/apply" element={<CitizenApply />} />
+    <Route path="/citizen/done/:id" element={<CitizenDone />} />
     {componentRoutes}
   </Routes>
 );

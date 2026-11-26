@@ -9,6 +9,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
@@ -45,15 +46,31 @@ public class SecurityConfig {
                         // no controller behind them they 404, which the provider treats
                         // as "no uma backend" and falls back to its guest profile.
                         .requestMatchers("/api/uma/auth/**", "/api/uma/userinfo").permitAll()
-                        // Everything business-facing requires an authenticated session.
-                        .requestMatchers("/api/**").authenticated()
+                        // Two roles (SUPPORT.01, Citizen e-service): citizens use only the
+                        // citizen API, social workers only the rest of the API.
+                        .requestMatchers("/api/citizen/**").hasRole("CITIZEN")
+                        .requestMatchers("/api/**").hasRole("USER")
                         .anyRequest().denyAll())
                 // Missing/invalid credentials are 401 (who are you?); an authenticated
                 // request without rights would be 403 (I know, and no). The course's
                 // S3 distinction, enforced here — Spring's default is 403 for both.
-                .exceptionHandling(e -> e.authenticationEntryPoint(problemDetail401()))
+                .exceptionHandling(e -> e.authenticationEntryPoint(problemDetail401())
+                        .accessDeniedHandler(problemDetail403()))
                 .addFilterBefore(mockAuth, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    /** A 403 in the same problem-detail shape: signed in, but the wrong role for this API. */
+    private static AccessDeniedHandler problemDetail403() {
+        return (request, response, ex) -> {
+            response.setStatus(HttpStatus.FORBIDDEN.value());
+            response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("""
+                    {"type":"about:blank","title":"Forbidden","status":403,\
+                    "detail":"this API is not for your role — citizens use /api/citizen, social workers the rest of /api",\
+                    "instance":"%s"}""".formatted(request.getRequestURI()));
+        };
     }
 
     /**
