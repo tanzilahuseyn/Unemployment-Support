@@ -51,4 +51,4 @@ This keeps them from being mistaken for done.
   leftover chat text are easy to miss in a long AI-assisted document.
 - **A legal review is useful only when it reaches the code.** Each critical
   finding became a rule, a status or a test in revision 2.
-  [Nilani: add your own lessons.]
+ 
