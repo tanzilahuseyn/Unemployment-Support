@@ -3,6 +3,7 @@ package ee.taltech.ite4120.support;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -28,6 +29,7 @@ import ee.taltech.ite4120.support.registry.population.PopulationRegistryAdapter;
 import ee.taltech.ite4120.support.registry.unemployment.UnemploymentRegistration;
 import ee.taltech.ite4120.support.registry.unemployment.UnemploymentRegistryAdapter;
 import ee.taltech.ite4120.support.service.ApplicationService;
+import ee.taltech.ite4120.support.service.UnavailableRetryJob;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -49,7 +51,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * THE BUSINESS TESTS — the executable form of tests 1–12 in
+ * THE BUSINESS TESTS — the executable form of tests 1–13 in
  * docs/src/specifications/SUPPORT.01 (revision 2) § Business tests. Written before
  * the implementation; watched fail; then made green.
  *
@@ -73,6 +75,9 @@ class SupportBusinessRulesIT {
 
     @Autowired
     JdbcTemplate jdbc;
+
+    @Autowired
+    UnavailableRetryJob retryJob;
 
     @MockitoBean
     PopulationRegistryAdapter population;
@@ -390,6 +395,70 @@ class SupportBusinessRulesIT {
         assertThat(unavailable.nameAvailable()).isFalse();
         assertThat(unavailable.firstName()).isNull();
         assertThat(unavailable.birthDate()).isEqualTo(LocalDate.of(1990, 1, 1));
+    }
+
+    @Test
+    void unavailableChecksAreRetriedAutomatically() {
+        // Given A: Töötukassa is down, so its check is UNAVAILABLE
+        String a = code("4900101014");
+        String b = code("4900101015");
+        String c = code("4900101016");
+        allChecksPass(a);
+        when(unemployment.lookup(a)).thenThrow(new RegistryUnavailableException("Töötukassa unreachable"));
+        Application appA = service.create(application(a, "MONTHLY", LocalDate.of(2033, 1, 1), LocalDate.of(2033, 1, 31)));
+        service.verify(appA.getId());
+
+        // and B: unemployed and employed at once, so its checks are INCONCLUSIVE
+        when(population.lookup(b)).thenReturn(new PersonResidence(b, "Test", "Person", "Testi 1, Tallinn", "Tallinn", DATA_AS_OF));
+        when(unemployment.lookup(b)).thenReturn(new UnemploymentRegistration(b, true, LocalDate.of(2026, 9, 1), DATA_AS_OF));
+        when(employment.lookup(b)).thenReturn(new EmploymentStatus(b, true, DATA_AS_OF));
+        Application appB = service.create(application(b, "MONTHLY", LocalDate.of(2033, 1, 1), LocalDate.of(2033, 1, 31)));
+        service.verify(appB.getId());
+
+        // and C: Töötukassa verified manually, the Employment Register still UNAVAILABLE
+        when(population.lookup(c)).thenReturn(new PersonResidence(c, "Test", "Person", "Testi 1, Tallinn", "Tallinn", DATA_AS_OF));
+        when(unemployment.lookup(c)).thenThrow(new RegistryUnavailableException("Töötukassa unreachable"));
+        when(employment.lookup(c)).thenThrow(new RegistryUnavailableException("Employment Register unreachable"));
+        Application appC = service.create(application(c, "MONTHLY", LocalDate.of(2033, 1, 1), LocalDate.of(2033, 1, 31)));
+        service.verify(appC.getId());
+        service.verifyManually(appC.getId(), CheckType.UNEMPLOYMENT, CheckStatus.PASS,
+                "Töötukassa decision letter shown by the applicant", "Registered since 2026-09-01");
+
+        for (Application x : List.of(appA, appB, appC)) {
+            assertThat(service.require(x.getId()).getStatus()).isEqualTo(ApplicationStatus.PENDING_VERIFICATION);
+        }
+        int evidenceB = evidenceCount(appB.getId());
+        int evidenceC = evidenceCount(appC.getId());
+
+        // When the retry runs while Töötukassa is still down, then A gets a new UNAVAILABLE record and stays pending
+        int evidenceA = evidenceCount(appA.getId());
+        retryJob.retryUnavailable();
+        assertThat(evidenceCount(appA.getId())).isGreaterThan(evidenceA);
+        assertThat(byType(service.evidence(appA.getId())).get(CheckType.UNEMPLOYMENT).getResult())
+                .isEqualTo(CheckStatus.UNAVAILABLE);
+        assertThat(service.require(appA.getId()).getStatus()).isEqualTo(ApplicationStatus.PENDING_VERIFICATION);
+
+        // When it runs after Töötukassa answers
+        doReturn(new UnemploymentRegistration(a, true, LocalDate.of(2026, 9, 1), DATA_AS_OF)).when(unemployment).lookup(a);
+        retryJob.retryUnavailable();
+
+        // Then A is ready for a decision, with PASS from Töötukassa, audited as an automatic retry, and not decided
+        assertThat(service.require(appA.getId()).getStatus()).isEqualTo(ApplicationStatus.READY_FOR_DECISION);
+        assertThat(byType(service.evidence(appA.getId())).get(CheckType.UNEMPLOYMENT).getResult())
+                .isEqualTo(CheckStatus.PASS);
+        assertThat(service.audit(appA.getId())).extracting(AuditEvent::getDetail)
+                .anySatisfy(d -> assertThat(d).startsWith("automatic retry"));
+        assertThat(jdbc.queryForObject("select count(1) from support.decision where application_id = ?",
+                Integer.class, appA.getId())).isZero();
+
+        // and B and C get no new evidence
+        assertThat(evidenceCount(appB.getId())).isEqualTo(evidenceB);
+        assertThat(evidenceCount(appC.getId())).isEqualTo(evidenceC);
+    }
+
+    private int evidenceCount(Long applicationId) {
+        return jdbc.queryForObject("select count(1) from support.check_evidence where application_id = ?",
+                Integer.class, applicationId);
     }
 
     /** Lives in Tallinn, registered unemployed, no active employment. Unknown codes are not found. */

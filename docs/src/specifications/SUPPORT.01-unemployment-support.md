@@ -53,7 +53,7 @@ or `INCONCLUSIVE`.
 | Status | Means | Next |
 | --- | --- | --- |
 | `OPEN` | registered, not yet verified | verify → `PENDING_VERIFICATION` or `READY_FOR_DECISION` |
-| `PENDING_VERIFICATION` | at least one **required** check is `UNAVAILABLE` or `INCONCLUSIVE` | verify again, or verify manually → `READY_FOR_DECISION` |
+| `PENDING_VERIFICATION` | at least one **required** check is `UNAVAILABLE` or `INCONCLUSIVE` | verify again, verify manually, or the automatic retry → `READY_FOR_DECISION` |
 | `READY_FOR_DECISION` | every required check is `PASS` or `FAIL` | approve / reject |
 | `APPROVED`, `REJECTED` | decided; final | — |
 
@@ -178,6 +178,16 @@ Every error is `application/problem+json`. All endpoints require
 - **Deciding fails safe:** `UNAVAILABLE` and `INCONCLUSIVE` neither approve
   nor reject anyone. They hold the application in `PENDING_VERIFICATION` until
   the fact is verified, by the registry or manually.
+- **Unavailable is retried automatically:** every hour
+  (`support.registry.retry.interval`, default `PT1H`) the system verifies
+  again each `PENDING_VERIFICATION` application that has an `UNAVAILABLE`
+  required check and no manual evidence. It asks the scheme's registries
+  exactly as **Verify** does and stores and audits the answers the same way,
+  as the actor `social services`, with audit details starting
+  `automatic retry`. It never decides. `INCONCLUSIVE` checks are not retried,
+  because registries that contradict each other need a person, and an
+  application with a manual verification is left to the worker.
+  `support.registry.retry.enabled: false` switches the retry off.
 
 **The registries.** Three adapters in `support/registry/`:
 - Each has an interface, an HTTP adapter, an X-Road skeleton and a mapper from
@@ -195,7 +205,7 @@ Every error is `application/problem+json`. All endpoints require
 | | detail panel | `ResourceList.detailView` | the selected application: personal code, scheme, period, number of family members, status, and its **stored** evidence per check (result, source, retrieved at). It makes no registry query; "Open application" goes to the application page |
 | | summary | `AppButtonSecondary` opening an antd `Modal` | the `/reports/summary` counts for all periods: per status, per scheme, decisions and rejection reasons |
 | Application page `/support/{id}` | application | `ResourceForm` + `useDataController` | Edit and Withdraw while undecided. Next to the personal code: first name and surname from `/person`, marked "from the Population Register, not stored", and the date of birth; when the registry cannot answer, "name not available" |
-| | verification | `AppCard` with **Verify** (`AppButtonPrimary`) and one row per required check: result `AppTag` (green `PASS`, red `FAIL`, grey `UNAVAILABLE`, orange `INCONCLUSIVE`), status detail, source, retrieved at, data as of; live name and address after a verification, marked as not stored | a check not required by the scheme is shown as "not required" |
+| | verification | `AppCard` with **Verify** (`AppButtonPrimary`) and one row per required check: result `AppTag` (green `PASS`, red `FAIL`, grey `UNAVAILABLE`, orange `INCONCLUSIVE`), status detail, source, retrieved at, data as of; live name and address after a verification, marked as not stored | a check not required by the scheme is shown as "not required"; while a check is `UNAVAILABLE`, the card says it is retried automatically every hour |
 | | manual verification | per unresolved check: `Radio.Group` `PASS`/`FAIL`, `Input` source, `Input.TextArea` note, `AppButtonSecondary` | only for `UNAVAILABLE` / `INCONCLUSIVE` |
 | | decision | `AppCard`: `Radio.Group` Approve / Reject, `Checkbox` Exception, `Select` reason code, `Input.TextArea` explanation, `AppButtonPrimary` Decide | Approve enabled only when `READY_FOR_DECISION`; Exception only when a required check is `FAIL`; after deciding, read-only with legal basis, rule version and review information |
 | | audit | `AppCard` list of the application's audit events | read-only |
@@ -261,7 +271,18 @@ shown as **"Number of family members"** (the API field stays `householdSize`).
     the name; no table stores the name. Given the Population Register is
     unreachable, then it answers the date of birth with `nameAvailable: false`.
 
-Tests 1–12 are backend tests (`SupportBusinessRulesIT`), with the three
+13. **Unavailable checks are retried automatically.**
+    Given application A whose Töötukassa check is `UNAVAILABLE`, application B
+    whose checks are `INCONCLUSIVE`, and application C whose Töötukassa check
+    was verified manually while its Employment Register check is
+    `UNAVAILABLE` — all three `PENDING_VERIFICATION`. When the retry runs while
+    Töötukassa is still down, then A gets a new `UNAVAILABLE` record and stays
+    pending. When it runs after Töötukassa answers, then A is
+    `READY_FOR_DECISION` with `PASS` from Töötukassa and an audit event
+    starting `automatic retry`, and is not decided; B and C get no new
+    evidence.
+
+Tests 1–13 are backend tests (`SupportBusinessRulesIT`), with the three
 registry adapters as test doubles.
 
 ## Outside the code

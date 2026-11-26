@@ -52,3 +52,8 @@ support:
     url: http://localhost:18440/mock-registry
     # The built-in imitated registries; enabled only in the local profile.
     mock-server: false
+    # Pending applications with an UNAVAILABLE check are verified again on this
+    # interval (ISO-8601 duration); never decided. false switches the retry off.
+    retry:
+      enabled: true
+      interval: PT1H
