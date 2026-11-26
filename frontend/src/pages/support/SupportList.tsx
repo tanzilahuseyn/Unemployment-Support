@@ -1,22 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal, Select } from 'antd';
-import { BarChartOutlined, PlusOutlined } from '@ant-design/icons';
+import { BarChartOutlined, PlusOutlined, TeamOutlined } from '@ant-design/icons';
+import { checkIcon, ManualTag, ResultTag, SchemeTag, StatusTag, statusIcon, SupportIllustration } from './visuals';
 import {
   AppButtonPrimary,
   AppButtonSecondary,
   AppLink,
-  AppTag,
   AppTimestamp,
   ResourceList,
   useAppNotification,
   type ResourceListColumn,
 } from '@helex/ui';
 import {
-  checkColor,
   checkLabel,
   reasonLabel,
-  statusColor,
   statusLabel,
   supportApi,
   type Application,
@@ -65,6 +63,64 @@ const SummaryView = ({ report, schemeName }: { report: SummaryReport; schemeName
   );
 };
 
+/** One clickable count tile in the overview. */
+const Tile = ({ label, n, color, icon, active, onClick }: {
+  label: string; n: number; color: string; icon: React.ReactNode; active: boolean; onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    style={{
+      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', minWidth: 132, cursor: 'pointer',
+      textAlign: 'left', font: 'inherit', color: 'inherit', borderRadius: 8,
+      background: active ? color : '#ffffff', border: `1px solid ${color}`,
+    }}
+  >
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32,
+      borderRadius: '50%', fontSize: 16, background: active ? '#ffffff' : color, color: active ? color : '#ffffff',
+    }}>
+      {icon}
+    </span>
+    <span>
+      <b style={{ fontSize: 18, display: 'block', lineHeight: 1.1, color: active ? '#ffffff' : undefined }}>{n}</b>
+      <span style={{ fontSize: 12, color: active ? '#ffffff' : undefined, opacity: active ? 1 : 0.75 }}>{label}</span>
+    </span>
+  </button>
+);
+
+const tileColor: Record<ApplicationStatus, string> = {
+  OPEN: '#2468b0',
+  PENDING_VERIFICATION: '#d48806',
+  READY_FOR_DECISION: '#08979c',
+  APPROVED: '#277257',
+  REJECTED: '#af4458',
+};
+
+/** The list's header: illustration, a short explanation, and a tile per status that filters the list. */
+const Overview = ({ report, status, onStatus }: {
+  report: SummaryReport | null; status?: string; onStatus: (s?: string) => void;
+}) => (
+  <div style={{
+    display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 16, padding: '12px 16px', margin: '0 0 12px',
+    borderRadius: 8, background: 'linear-gradient(90deg, #ebeaef 0%, #fbe3f0 100%)', borderLeft: '4px solid #e4067e',
+  }}>
+    <SupportIllustration size={96} />
+    <div style={{ flex: '1 1 200px' }}>
+      <div style={{ fontSize: 18, fontWeight: 700, color: '#342b60' }}>Unemployment support, Tallinn</div>
+      <div style={{ opacity: 0.8 }}>Facts verified over X-Road. A registry that does not answer never rejects anyone.</div>
+    </div>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      <Tile label="All applications" n={report?.total ?? 0} color="#342b60" icon={<TeamOutlined />}
+        active={!status} onClick={() => onStatus(undefined)} />
+      {(Object.keys(tileColor) as ApplicationStatus[]).map((s) => (
+        <Tile key={s} label={statusLabel[s]} n={report?.byStatus[s] ?? 0} color={tileColor[s]} icon={statusIcon[s]}
+          active={status === s} onClick={() => onStatus(status === s ? undefined : s)} />
+      ))}
+    </div>
+  </div>
+);
+
 /**
  * The application list — SUPPORT.01 § UI, Application list. ResourceList with search
  * by personal code, filters for status and benefit scheme, a detail panel with the
@@ -82,6 +138,7 @@ export const SupportList = () => {
   const [selected, setSelected] = useState<Application | null>(null);
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [report, setReport] = useState<SummaryReport | null>(null);
+  const [counts, setCounts] = useState<SummaryReport | null>(null);
 
   // The detail panel shows the STORED evidence only — selecting a row never queries a registry.
   useEffect(() => {
@@ -103,6 +160,11 @@ export const SupportList = () => {
   useEffect(() => {
     supportApi.schemes().then(setTypes).catch((e) => notify.error('Could not load benefit schemes', e.message));
   }, [notify]);
+
+  // The overview tiles: counts for all periods, refreshed whenever the list reloads.
+  useEffect(() => {
+    supportApi.summary().then(setCounts).catch(() => setCounts(null));
+  }, [rows]);
 
   const load = useCallback(
     (text: string, st?: string, type?: string) => {
@@ -154,7 +216,7 @@ export const SupportList = () => {
       key: 'supportTypeCode',
       title: 'Benefit scheme',
       dataIndex: 'supportTypeCode',
-      render: (code: string) => <AppTag>{typeName(code)}</AppTag>,
+      render: (code: string) => <SchemeTag code={code} name={typeName(code)} />,
     },
     {
       key: 'period',
@@ -168,12 +230,13 @@ export const SupportList = () => {
       key: 'status',
       title: 'Status',
       dataIndex: 'status',
-      render: (s: Application['status']) => <AppTag color={statusColor[s]}>{statusLabel[s]}</AppTag>,
+      render: (s: Application['status']) => <StatusTag status={s} />,
     },
   ];
 
   return (
     <>
+    <Overview report={counts} status={status} onStatus={setStatus} />
     <Modal open={!!report} title="Summary report" footer={null} onCancel={() => setReport(null)}>
       {report && <SummaryView report={report} schemeName={typeName} />}
     </Modal>
@@ -227,10 +290,12 @@ export const SupportList = () => {
         render: (a) => (
           <div style={{ display: 'grid', gap: 8 }}>
             <div>
-              <b>{applicationNo(a)}</b> <AppTag color={statusColor[a.status]}>{statusLabel[a.status]}</AppTag>
+              <b>{applicationNo(a)}</b> <StatusTag status={a.status} />
             </div>
             <div>Personal code {a.applicantIsikukood}</div>
-            <div>{typeName(a.supportTypeCode)}</div>
+            <div>
+              <SchemeTag code={a.supportTypeCode} name={typeName(a.supportTypeCode)} />
+            </div>
             <div>
               {a.periodStart} – {a.periodEnd} · family members: {a.householdSize}
             </div>
@@ -238,9 +303,11 @@ export const SupportList = () => {
             {evidence.length === 0 && <div style={{ opacity: 0.65 }}>Not verified yet.</div>}
             {evidence.map((e) => (
               <div key={e.id}>
-                <div style={{ fontSize: 12 }}>{checkLabel[e.checkType]}</div>
-                <AppTag color={checkColor[e.result]}>{e.result}</AppTag>
-                {e.manual && <AppTag color="purple">MANUAL</AppTag>}
+                <div style={{ fontSize: 12 }}>
+                  {checkIcon[e.checkType]} {checkLabel[e.checkType]}
+                </div>
+                <ResultTag result={e.result} />
+                {e.manual && <ManualTag />}
                 <div style={{ opacity: 0.65, fontSize: 12 }}>
                   {e.source} · retrieved <AppTimestamp value={e.retrievedAt} fallback="—" />
                 </div>

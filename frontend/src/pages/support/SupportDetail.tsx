@@ -16,12 +16,10 @@ import {
   type ResourceFormSection,
 } from '@helex/ui';
 import {
-  checkColor,
   checkLabel,
   reasonCites,
   reasonLabel,
   requires,
-  statusColor,
   statusLabel,
   supportApi,
   type Application,
@@ -37,6 +35,7 @@ import {
   formatDate,
   type Applicant,
 } from '../../supportApi';
+import { checkIcon, ManualTag, ResultTag, SchemeTag, StatusTag } from './visuals';
 
 const CHECKS: CheckType[] = ['RESIDENCE', 'UNEMPLOYMENT', 'EMPLOYMENT'];
 
@@ -57,8 +56,8 @@ const Muted = ({ children }: { children: React.ReactNode }) => (
 const EvidenceRow = ({ e }: { e: Evidence }) => (
   <div style={{ display: 'grid', gap: 2 }}>
     <div>
-      <AppTag color={checkColor[e.result]}>{e.result}</AppTag>
-      {e.manual && <AppTag color="purple">MANUAL</AppTag>}
+      <ResultTag result={e.result} />
+      {e.manual && <ManualTag />}
       {e.statusDetail && <span style={{ fontSize: 12 }}>{e.statusDetail}</span>}
     </div>
     <Muted>Source: {e.source}</Muted>
@@ -143,7 +142,14 @@ const VerificationCard = ({
         const e = evidence.find((x) => x.checkType === t);
         const required = requires(scheme, t);
         return (
-          <FieldItem key={t} label={checkLabel[t]}>
+          <FieldItem
+            key={t}
+            label={
+              <span>
+                {checkIcon[t]} {checkLabel[t]}
+              </span>
+            }
+          >
             {!required ? (
               <Muted>Not required by this scheme — not queried.</Muted>
             ) : !e ? (
@@ -261,7 +267,7 @@ const DecideCard = ({
 const DecisionView = ({ d }: { d: Decision }) => (
   <AppCard title="Decision" size="small">
     <FieldItem label="Outcome">
-      <AppTag color={d.outcome === 'APPROVED' ? 'green' : 'red'}>{d.outcome}</AppTag>
+      <StatusTag status={d.outcome} />
       {d.exception && <AppTag color="orange">EXCEPTION</AppTag>}
     </FieldItem>
     {d.reasonCode && <FieldItem label="Reason">{reasonLabel[d.reasonCode]}</FieldItem>}
@@ -275,7 +281,9 @@ const DecisionView = ({ d }: { d: Decision }) => (
       <div style={{ display: 'grid', gap: 8 }}>
         {d.evidence.map((e) => (
           <div key={e.id}>
-            <b style={{ fontSize: 12 }}>{checkLabel[e.checkType]}</b>
+            <b style={{ fontSize: 12 }}>
+              {checkIcon[e.checkType]} {checkLabel[e.checkType]}
+            </b>
             <EvidenceRow e={e} />
           </div>
         ))}
@@ -444,7 +452,7 @@ export const SupportDetail = () => {
           options: schemes.map((s) => ({ value: s.code, label: s.name })),
           viewRender: (code) => (
             <>
-              <AppTag>{schemeName(code)}</AppTag>
+              <SchemeTag code={String(code)} name={schemeName(code)} />
               {scheme && <Muted>{scheme.legalBasis} · rules {scheme.ruleVersion}</Muted>}
             </>
           ),
@@ -494,7 +502,7 @@ export const SupportDetail = () => {
       icon={<SolutionOutlined />}
       name={dc.current.id ? applicationNo(dc.current) : dc.current.applicantIsikukood}
       subtitle={schemeName(dc.current.supportTypeCode)}
-      chips={status ? <AppTag color={statusColor[status]}>{statusLabel[status]}</AppTag> : undefined}
+      chips={status ? <StatusTag status={status} /> : undefined}
       loading={loading}
       saving={saving}
       deleting={deleting}
