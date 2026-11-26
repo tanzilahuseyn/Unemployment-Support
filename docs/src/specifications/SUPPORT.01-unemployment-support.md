@@ -202,6 +202,7 @@ Every error is `application/problem+json`. All endpoints require
 | Screen | Element | Component | Rules |
 | --- | --- | --- | --- |
 | Application list `/support` | table, search, filters | `ResourceList` | as revision 1; status tags for all five statuses; "Benefit scheme" instead of "Support type"; a "Date of birth" column after the personal code, read from the code (no registry query); an **"Application no."** column first, linking to the application |
+| | overview | a header above the list: an illustration and one tile per status with its count from `/reports/summary` (counts only) | clicking a tile filters the list by that status; "All applications" clears the filter |
 | | detail panel | `ResourceList.detailView` | the selected application: personal code, scheme, period, number of family members, status, and its **stored** evidence per check (result, source, retrieved at). It makes no registry query; "Open application" goes to the application page |
 | | summary | `AppButtonSecondary` opening an antd `Modal` | the `/reports/summary` counts for all periods: per status, per scheme, decisions and rejection reasons |
 | Application page `/support/{id}` | application | `ResourceForm` + `useDataController` | Titled with the application number. Edit and Withdraw while undecided. An **Applicant** field lists one fact per line: personal code, name (first name and surname from `/person`) and date of birth, marked "from the Population Register, not stored"; when the registry cannot answer, the name says "not available right now" |
@@ -210,6 +211,12 @@ Every error is `application/problem+json`. All endpoints require
 | | decision | `AppCard`: `Radio.Group` Approve / Reject, `Checkbox` Exception, `Select` reason code, `Input.TextArea` explanation, `AppButtonPrimary` Decide | Approve enabled only when `READY_FOR_DECISION`; Exception only when a required check is `FAIL`; after deciding, read-only with legal basis, rule version and review information |
 | | audit | `AppCard` list of the application's audit events | read-only |
 | Register form `/support/new` | as revision 1 | | personal code validated with checksum; scheme options from `/schemes` |
+
+**Colour and icons.** Every screen uses the same look: each status has its own
+colour and icon (open, pending, ready, approved, rejected), monthly support is a
+blue tag with a calendar and one-off support a pink tag with a gift, each check
+shows its registry's icon (home, ID card, shop), and each result its colour and
+icon.
 
 **Application number.** Screens show each application as the benefit scheme's
 first letter and its id: **M-1000** for monthly support, **O-1002** for one-off
