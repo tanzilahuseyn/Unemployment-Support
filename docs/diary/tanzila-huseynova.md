@@ -5,7 +5,7 @@ Agent: Claude Code (Claude Opus 5.5) in the Claude desktop app.
 
 Written with the agent from the session history. Hours are estimated from commit
 and pull request times, rounded to a quarter hour, with time added for reading,
-discussing and reviewing. Total: **15.25 hours**.
+discussing and reviewing. Total: **15.5 hours**.
 
 | Date | Hours | What I asked the agent | What it got wrong or missed | How it was corrected |
 | --- | --- | --- | --- | --- |
@@ -41,6 +41,7 @@ discussing and reviewing. Total: **15.25 hours**.
 | 26.11.2026 | 0.25 | Change the list title to "Assignment of unemployment insurance payment". | "Unemployment insurance" is the Unemployment Insurance Fund's own benefit, not the city's support this app handles. The policy analysis stresses the difference, so a teacher could call it the wrong benefit. | The agent explained this before changing anything. I chose **"Assignment of unemployment support payment"** (pull request #15), and the spec says why. |
 | 26.11.2026 | 0.25 | Give me a presentation for my part and the text I should say. | One line on slide 9 still mentioned the template's "animals" user. | It replaced that line, put the full talk text into the speaker notes, and made a printable script with timings and likely questions. |
 | 26.11.2026 | 1 | How can I improve my app? Then: build the automatic retry of checks a registry did not answer (pull request #17). | The new business test first failed because of its own setup: it re-stubbed a registry double that was set to throw. A retry could also have overwritten a worker's manual verification. | Spec first, then business test 13, then the code. The retry runs every hour, only for pending applications with an `UNAVAILABLE` check and no manual verification, and never decides. Contradicting registries are left to a person. 18/18 tests passed. |
+| 26.11.2026 | 0.25 | On the application page the name, date of birth and personal code ran together and were hard to read. Make them a list, with the personal code first (pull request #19). | Nothing went wrong; the field label still said "Personal code" although it now held three facts. | One line per fact under the label "Applicant": personal code, name, date of birth. Checked in the browser, and the spec's description of the page updated. |
 
 ## What I learned about working with the agent
 
