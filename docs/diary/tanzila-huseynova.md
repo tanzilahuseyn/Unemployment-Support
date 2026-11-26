@@ -5,7 +5,7 @@ Agent: Claude Code (Claude Opus 5.5) in the Claude desktop app.
 
 Written with the agent from the session history. Hours are estimated from commit
 and pull request times, rounded to a quarter hour, with time added for reading,
-discussing and reviewing. Total: **13.5 hours**.
+discussing and reviewing. Total: **14 hours**.
 
 | Date | Hours | What I asked the agent | What it got wrong or missed | How it was corrected |
 | --- | --- | --- | --- | --- |
@@ -37,6 +37,8 @@ discussing and reviewing. Total: **13.5 hours**.
 | 26.11.2026 | 0.25 | Give Nilani a new app link. | Docker and the app had stopped, so the old link was dead. | It started Docker, the app and a new link, and tested the link from outside. |
 | 26.11.2026 | 1 | Change the website: a darker background, a title a citizen understands, "number of family members" instead of "household", and name, surname and father's name after the personal code (pull request #12). | Darkening the page colour changed nothing visible: the white area was the card colour. Names in the list would have broken our privacy rule, and the Estonian Population Register has no father's name. | It darkened the card colour instead. It explained the privacy conflict and gave options. We chose the first name and surname next to the personal code on the application page, looked up live and never stored, plus the date of birth from the code. Spec first and business test 12 first; 17/17 tests passed. Father's name was left out, because the personal code already tells people with the same name apart. |
 | 26.11.2026 | 0.25 | Update my slides, the summary and this diary for the new numbers (14 endpoints, 12 business tests). | The files used to build the slides had been deleted from the agent's temporary folder. | It edited my saved slides directly, kept the changes I had made in PowerPoint, and saved a backup of each deck first. |
+| 26.11.2026 | 0.25 | I saw 7 cases. Give the demo people full names and realistic birth dates. | The new date-of-birth column showed the demo codes' birth dates (01.01.1990, 02.02.1990, …), which looked obviously made up. The 7th case had been typed in through the shared link, and its personal code might belong to a real person. | New valid codes with varied birth dates and full names, through a new demo changeset (92) instead of editing an old one (pull request #14). The 7th person was not added to the imitated registries; the database was reset to the 6 demo cases. The slides, summary and PDF got the new codes. |
+| 26.11.2026 | 0.25 | Change the list title to "Assignment of unemployment insurance payment". | "Unemployment insurance" is the Unemployment Insurance Fund's own benefit, not the city's support this app handles. The policy analysis stresses the difference, so a teacher could call it the wrong benefit. | The agent explained this before changing anything. I chose **"Assignment of unemployment support payment"** (pull request #15), and the spec says why. |
 
 ## What I learned about working with the agent
 
@@ -60,3 +62,5 @@ discussing and reviewing. Total: **13.5 hours**.
 - **A small wish can clash with a design rule.** Showing names in the list
   sounded simple, but it went against our privacy rule. The agent raised it
   before building, and we found a way that keeps both.
+- **Words have legal meaning.** "Insurance" and "support" are different
+  benefits in Estonian law, so a title is part of the design too.
