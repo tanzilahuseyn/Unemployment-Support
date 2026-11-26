@@ -33,6 +33,7 @@ import {
   type Evidence,
   type ReasonCode,
   type Verification,
+  applicationNo,
   formatDate,
   type Applicant,
 } from '../../supportApi';
@@ -491,7 +492,7 @@ export const SupportDetail = () => {
       mode={mode}
       entityLabel="Application"
       icon={<SolutionOutlined />}
-      name={dc.current.applicantIsikukood}
+      name={dc.current.id ? applicationNo(dc.current) : dc.current.applicantIsikukood}
       subtitle={schemeName(dc.current.supportTypeCode)}
       chips={status ? <AppTag color={statusColor[status]}>{statusLabel[status]}</AppTag> : undefined}
       loading={loading}

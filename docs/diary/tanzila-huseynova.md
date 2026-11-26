@@ -5,7 +5,7 @@ Agent: Claude Code (Claude Opus 5.5) in the Claude desktop app.
 
 Written with the agent from the session history. Hours are estimated from commit
 and pull request times, rounded to a quarter hour, with time added for reading,
-discussing and reviewing. Total: **15.5 hours**.
+discussing and reviewing. Total: **15.75 hours**.
 
 | Date | Hours | What I asked the agent | What it got wrong or missed | How it was corrected |
 | --- | --- | --- | --- | --- |
@@ -42,6 +42,7 @@ discussing and reviewing. Total: **15.5 hours**.
 | 26.11.2026 | 0.25 | Give me a presentation for my part and the text I should say. | One line on slide 9 still mentioned the template's "animals" user. | It replaced that line, put the full talk text into the speaker notes, and made a printable script with timings and likely questions. |
 | 26.11.2026 | 1 | How can I improve my app? Then: build the automatic retry of checks a registry did not answer (pull request #17). | The new business test first failed because of its own setup: it re-stubbed a registry double that was set to throw. A retry could also have overwritten a worker's manual verification. | Spec first, then business test 13, then the code. The retry runs every hour, only for pending applications with an `UNAVAILABLE` check and no manual verification, and never decides. Contradicting registries are left to a person. 18/18 tests passed. |
 | 26.11.2026 | 0.25 | On the application page the name, date of birth and personal code ran together and were hard to read. Make them a list, with the personal code first (pull request #19). | Nothing went wrong; the field label still said "Personal code" although it now held three facts. | One line per fact under the label "Applicant": personal code, name, date of birth. Checked in the browser, and the spec's description of the page updated. |
+| 26.11.2026 | 0.25 | Make the applications easier to tell apart, with numbers like M-xxxx for monthly and O-xxxx for one-off support (pull request #20). | My note could be read in different ways: next to the personal code, instead of it, or in one column. | The agent asked where they should go. I chose a new first column. The number is the scheme's first letter and the id (M-1000, O-1002), shown in the list, the detail panel and as the application page's title; nothing changed in the database. Checked in the browser. |
 
 ## What I learned about working with the agent
 

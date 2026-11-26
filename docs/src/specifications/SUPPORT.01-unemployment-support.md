@@ -201,15 +201,19 @@ Every error is `application/problem+json`. All endpoints require
 
 | Screen | Element | Component | Rules |
 | --- | --- | --- | --- |
-| Application list `/support` | table, search, filters | `ResourceList` | as revision 1; status tags for all five statuses; "Benefit scheme" instead of "Support type"; a "Date of birth" column after the personal code, read from the code (no registry query) |
+| Application list `/support` | table, search, filters | `ResourceList` | as revision 1; status tags for all five statuses; "Benefit scheme" instead of "Support type"; a "Date of birth" column after the personal code, read from the code (no registry query); an **"Application no."** column first, linking to the application |
 | | detail panel | `ResourceList.detailView` | the selected application: personal code, scheme, period, number of family members, status, and its **stored** evidence per check (result, source, retrieved at). It makes no registry query; "Open application" goes to the application page |
 | | summary | `AppButtonSecondary` opening an antd `Modal` | the `/reports/summary` counts for all periods: per status, per scheme, decisions and rejection reasons |
-| Application page `/support/{id}` | application | `ResourceForm` + `useDataController` | Edit and Withdraw while undecided. An **Applicant** field lists one fact per line: personal code, name (first name and surname from `/person`) and date of birth, marked "from the Population Register, not stored"; when the registry cannot answer, the name says "not available right now" |
+| Application page `/support/{id}` | application | `ResourceForm` + `useDataController` | Titled with the application number. Edit and Withdraw while undecided. An **Applicant** field lists one fact per line: personal code, name (first name and surname from `/person`) and date of birth, marked "from the Population Register, not stored"; when the registry cannot answer, the name says "not available right now" |
 | | verification | `AppCard` with **Verify** (`AppButtonPrimary`) and one row per required check: result `AppTag` (green `PASS`, red `FAIL`, grey `UNAVAILABLE`, orange `INCONCLUSIVE`), status detail, source, retrieved at, data as of; live name and address after a verification, marked as not stored | a check not required by the scheme is shown as "not required"; while a check is `UNAVAILABLE`, the card says it is retried automatically every hour |
 | | manual verification | per unresolved check: `Radio.Group` `PASS`/`FAIL`, `Input` source, `Input.TextArea` note, `AppButtonSecondary` | only for `UNAVAILABLE` / `INCONCLUSIVE` |
 | | decision | `AppCard`: `Radio.Group` Approve / Reject, `Checkbox` Exception, `Select` reason code, `Input.TextArea` explanation, `AppButtonPrimary` Decide | Approve enabled only when `READY_FOR_DECISION`; Exception only when a required check is `FAIL`; after deciding, read-only with legal basis, rule version and review information |
 | | audit | `AppCard` list of the application's audit events | read-only |
 | Register form `/support/new` | as revision 1 | | personal code validated with checksum; scheme options from `/schemes` |
+
+**Application number.** Screens show each application as the benefit scheme's
+first letter and its id: **M-1000** for monthly support, **O-1002** for one-off
+support. It is display only; the API and the database keep the plain id.
 
 Wording on the screens is plain language a citizen understands: the list is
 titled **"Assignment of unemployment support payment"** (the city's support, not
