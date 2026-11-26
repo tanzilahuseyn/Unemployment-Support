@@ -1,6 +1,7 @@
 package ee.taltech.ite4120.support.api;
 
 import ee.taltech.ite4120.support.dto.ApplicationQueryParams;
+import ee.taltech.ite4120.support.model.Applicant;
 import ee.taltech.ite4120.support.model.Application;
 import ee.taltech.ite4120.support.model.AuditEvent;
 import ee.taltech.ite4120.support.model.BenefitScheme;
@@ -124,6 +125,17 @@ public class ApplicationController {
     @GetMapping("/applications/{id}/decision")
     public Decision decision(@PathVariable Long id) {
         return service.decision(id);
+    }
+
+    @Operation(summary = "The applicant's name, live from the Population Register, and date of birth",
+            description = "First name and surname are looked up live and NOT stored; the date of birth is read "
+                    + "from the personal code. Writes a REGISTRY_QUERY audit event without the name. When the "
+                    + "registry cannot answer, nameAvailable is false and the date of birth is still returned.")
+    @ApiResponse(responseCode = "200", description = "The applicant, with or without the name")
+    @ApiResponse(responseCode = "404", description = "No active application with that id")
+    @GetMapping("/applications/{id}/person")
+    public Applicant person(@PathVariable Long id) {
+        return service.applicant(id);
     }
 
     @Operation(summary = "The application's audit events")

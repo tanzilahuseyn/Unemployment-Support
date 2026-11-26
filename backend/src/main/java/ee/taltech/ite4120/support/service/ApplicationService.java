@@ -1,6 +1,7 @@
 package ee.taltech.ite4120.support.service;
 
 import ee.taltech.ite4120.support.dto.ApplicationQueryParams;
+import ee.taltech.ite4120.support.model.Applicant;
 import ee.taltech.ite4120.support.model.Application;
 import ee.taltech.ite4120.support.model.ApplicationStatus;
 import ee.taltech.ite4120.support.model.AuditEvent;
@@ -131,6 +132,19 @@ public class ApplicationService {
         ApplicationStatus status = statusFor(scheme, current(id));
         moveTo(id, status);
         return new Verification(status, evidence.current(id), result.person());
+    }
+
+    /**
+     * The applicant's first name and surname, looked up live from the Population
+     * Register, and the date of birth from the personal code. Nothing is stored; the
+     * audit event records the lookup and its outcome, never the name.
+     */
+    public Applicant applicant(Long id) {
+        Application a = require(id);
+        String code = a.getApplicantIsikukood();
+        RegistryCheckService.NameLookup name = registries.name(code);
+        audit.log("REGISTRY_QUERY", id, CheckType.RESIDENCE.source() + ": name lookup " + name.outcome());
+        return new Applicant(name.firstName(), name.lastName(), PersonalCode.birthDate(code), "FOUND".equals(name.outcome()));
     }
 
     /** The current evidence per check — stored data only. */

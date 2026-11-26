@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import ee.taltech.ite4120.support.model.Applicant;
 import ee.taltech.ite4120.support.model.Application;
 import ee.taltech.ite4120.support.model.ApplicationStatus;
 import ee.taltech.ite4120.support.model.AuditEvent;
@@ -48,7 +49,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * THE BUSINESS TESTS — the executable form of tests 1–10 in
+ * THE BUSINESS TESTS — the executable form of tests 1–12 in
  * docs/src/specifications/SUPPORT.01 (revision 2) § Business tests. Written before
  * the implementation; watched fail; then made green.
  *
@@ -347,6 +348,48 @@ class SupportBusinessRulesIT {
         assertThatThrownBy(() -> service.summary(end, start))
                 .isInstanceOf(ApiClientException.class)
                 .hasMessageContaining("to must not be before from");
+    }
+
+    @Test
+    void theApplicantsNameIsLookedUpLiveAndNeverStored() {
+        // Given an application whose applicant the Population Register knows as Kalle Kask
+        String c = code("3900101013");
+        allChecksPass(c);
+        when(population.lookup(c)).thenReturn(
+                new PersonResidence(c, "Kalle", "Kask", "Näidise 11, Tallinn", "Tallinn", DATA_AS_OF));
+        Application a = service.create(application(c, "MONTHLY", LocalDate.of(2032, 1, 1), LocalDate.of(2032, 1, 31)));
+
+        // When the name is requested
+        Applicant p = service.applicant(a.getId());
+
+        // Then it answers the live name and the date of birth from the personal code
+        assertThat(p.nameAvailable()).isTrue();
+        assertThat(p.firstName()).isEqualTo("Kalle");
+        assertThat(p.lastName()).isEqualTo("Kask");
+        assertThat(p.birthDate()).isEqualTo(LocalDate.of(1990, 1, 1));
+
+        // and writes a REGISTRY_QUERY audit event without the name
+        List<AuditEvent> events = service.audit(a.getId());
+        assertThat(events).extracting(AuditEvent::getAction).contains("REGISTRY_QUERY");
+        assertThat(events).allSatisfy(e ->
+                assertThat(e.getDetail() == null ? "" : e.getDetail()).doesNotContain("Kalle", "Kask"));
+
+        // and no table stores the name
+        List<Map<String, Object>> textColumns = jdbc.queryForList(
+                "select table_name, column_name from information_schema.columns "
+                        + "where table_schema = 'support' and data_type = 'text'");
+        for (Map<String, Object> col : textColumns) {
+            Integer hits = jdbc.queryForObject("select count(1) from support." + col.get("table_name")
+                    + " where " + col.get("column_name") + " like '%Kask%'", Integer.class);
+            assertThat(hits).as("support.%s.%s", col.get("table_name"), col.get("column_name")).isZero();
+        }
+
+        // Given the Population Register is unreachable, the date of birth comes back without a name
+        when(population.lookup(c)).thenThrow(new RegistryUnavailableException("Population Register unreachable"));
+        Applicant unavailable = service.applicant(a.getId());
+        assertThat(unavailable.nameAvailable()).isFalse();
+        assertThat(unavailable.firstName()).isNull();
+        assertThat(unavailable.birthDate()).isEqualTo(LocalDate.of(1990, 1, 1));
     }
 
     /** Lives in Tallinn, registered unemployed, no active employment. Unknown codes are not found. */

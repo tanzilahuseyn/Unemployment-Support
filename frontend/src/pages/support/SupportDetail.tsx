@@ -33,6 +33,8 @@ import {
   type Evidence,
   type ReasonCode,
   type Verification,
+  formatDate,
+  type Applicant,
 } from '../../supportApi';
 
 const CHECKS: CheckType[] = ['RESIDENCE', 'UNEMPLOYMENT', 'EMPLOYMENT'];
@@ -315,6 +317,7 @@ export const SupportDetail = () => {
   const [schemes, setSchemes] = useState<BenefitScheme[]>([]);
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [person, setPerson] = useState<Verification['person']>(null);
+  const [applicant, setApplicant] = useState<Applicant | null>(null);
   const [decision, setDecision] = useState<Decision | null>(null);
   const [audit, setAudit] = useState<AuditEvent[]>([]);
   const [busy, setBusy] = useState(false);
@@ -341,6 +344,12 @@ export const SupportDetail = () => {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appId, notify]);
+
+  // The live name lookup runs once per opened application (each one is audited).
+  useEffect(() => {
+    setApplicant(null);
+    supportApi.person(appId).then(setApplicant).catch(() => setApplicant(null));
+  }, [appId]);
 
   const status = dc.current.status;
   const undecided = status === 'OPEN' || status === 'PENDING_VERIFICATION' || status === 'READY_FOR_DECISION';
@@ -394,9 +403,29 @@ export const SupportDetail = () => {
         {
           name: 'applicantIsikukood',
           label: 'Personal code',
-          type: 'text',
+          type: 'custom',
           modeOverride: 'view',
-          tooltip: 'The applicant is identified only by the personal code; name and address come from the registry',
+          tooltip: 'The applicant is identified by the personal code. The name comes live from the Population Register and is not stored',
+          render: ({ value }) => <span>{String(value ?? '')}</span>,
+          viewRender: (v) => (
+            <>
+              <div>{String(v ?? '—')}</div>
+              {applicant && (
+                <div>
+                  {applicant.nameAvailable ? (
+                    <b>
+                      {applicant.firstName} {applicant.lastName}
+                    </b>
+                  ) : (
+                    <Muted>Name not available right now</Muted>
+                  )}
+                  {' · born '}
+                  {formatDate(applicant.birthDate)}
+                </div>
+              )}
+              {applicant?.nameAvailable && <Muted>Name from the Population Register, not stored</Muted>}
+            </>
+          ),
         },
         {
           name: 'supportTypeCode',
@@ -430,7 +459,7 @@ export const SupportDetail = () => {
         },
         {
           name: 'householdSize',
-          label: 'Household size',
+          label: 'Number of family members',
           type: 'custom',
           tooltip: 'Context only — no rule uses it',
           rules: [{ required: true }],

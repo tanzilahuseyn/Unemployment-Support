@@ -33,6 +33,14 @@ public final class PersonalCode {
         return checksum(code) == code.charAt(10) - '0';
     }
 
+    /** The date of birth encoded in a valid personal code (digits 2–7 and the century digit). */
+    public static LocalDate birthDate(String code) {
+        int first = code.charAt(0) - '0';
+        int century = 1800 + ((first - 1) / 2) * 100;
+        return LocalDate.of(century + Integer.parseInt(code.substring(1, 3)),
+                Integer.parseInt(code.substring(3, 5)), Integer.parseInt(code.substring(5, 7)));
+    }
+
     static int checksum(String code) {
         int sum = weighted(code, WEIGHTS_1) % 11;
         if (sum == 10) {

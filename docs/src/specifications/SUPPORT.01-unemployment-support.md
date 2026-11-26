@@ -45,7 +45,8 @@ or `INCONCLUSIVE`.
   source, when it was retrieved, and the registry's own data timestamp), the
   decision, and audit events.
 - **Never stored or logged:** names, addresses or full registry answers. They
-  are shown to the worker only while verifying.
+  are shown to the worker only while verifying, and the applicant's first name
+  and surname while the worker has the application open.
 
 ## Status flow
 
@@ -141,6 +142,7 @@ rows stay as history.
 | `POST /api/support/applications/{id}/decision` | body `outcome`, `exception`, `reasonCode`, `explanation`. The server uses the stored evidence and copies `legal_basis`, `rule_version` and `review_info` from the scheme; **201** | 400 rule violations (below) · 404 · 409 decided |
 | `GET /api/support/applications/{id}/decision` | the decision with its evidence | 404 |
 | `GET /api/support/applications/{id}/audit` | the application's audit events | 404 |
+| `GET /api/support/applications/{id}/person` | the applicant's first name and surname, looked up **live** from the Population Register, and the date of birth read from the personal code. **Not stored.** Writes a `REGISTRY_QUERY` audit event without the name. An unreachable registry or an unknown person answers without a name (`nameAvailable: false`), never an error | 404 |
 | `GET /api/support/schemes` | effective benefit schemes with their rules | — |
 | `GET /api/support/reports/summary` | **reporting**: counts of active applications whose period overlaps `from`–`to` (both optional, `YYYY-MM-DD`): total, per status, per benefit scheme, decisions (approved, rejected, exceptions) and rejections per reason code. Aggregates only — no personal codes | 400 `to` before `from` |
 
@@ -176,15 +178,19 @@ Every error is `application/problem+json`. All endpoints require
 
 | Screen | Element | Component | Rules |
 | --- | --- | --- | --- |
-| Application list `/support` | table, search, filters | `ResourceList` | as revision 1; status tags for all five statuses; "Benefit scheme" instead of "Support type" |
-| | detail panel | `ResourceList.detailView` | the selected application: personal code, scheme, period, household size, status, and its **stored** evidence per check (result, source, retrieved at). It makes no registry query; "Open application" goes to the application page |
+| Application list `/support` | table, search, filters | `ResourceList` | as revision 1; status tags for all five statuses; "Benefit scheme" instead of "Support type"; a "Date of birth" column after the personal code, read from the code (no registry query) |
+| | detail panel | `ResourceList.detailView` | the selected application: personal code, scheme, period, number of family members, status, and its **stored** evidence per check (result, source, retrieved at). It makes no registry query; "Open application" goes to the application page |
 | | summary | `AppButtonSecondary` opening an antd `Modal` | the `/reports/summary` counts for all periods: per status, per scheme, decisions and rejection reasons |
-| Application page `/support/{id}` | application | `ResourceForm` + `useDataController` | Edit and Withdraw while undecided |
+| Application page `/support/{id}` | application | `ResourceForm` + `useDataController` | Edit and Withdraw while undecided. Next to the personal code: first name and surname from `/person`, marked "from the Population Register, not stored", and the date of birth; when the registry cannot answer, "name not available" |
 | | verification | `AppCard` with **Verify** (`AppButtonPrimary`) and one row per required check: result `AppTag` (green `PASS`, red `FAIL`, grey `UNAVAILABLE`, orange `INCONCLUSIVE`), status detail, source, retrieved at, data as of; live name and address after a verification, marked as not stored | a check not required by the scheme is shown as "not required" |
 | | manual verification | per unresolved check: `Radio.Group` `PASS`/`FAIL`, `Input` source, `Input.TextArea` note, `AppButtonSecondary` | only for `UNAVAILABLE` / `INCONCLUSIVE` |
 | | decision | `AppCard`: `Radio.Group` Approve / Reject, `Checkbox` Exception, `Select` reason code, `Input.TextArea` explanation, `AppButtonPrimary` Decide | Approve enabled only when `READY_FOR_DECISION`; Exception only when a required check is `FAIL`; after deciding, read-only with legal basis, rule version and review information |
 | | audit | `AppCard` list of the application's audit events | read-only |
 | Register form `/support/new` | as revision 1 | | personal code validated with checksum; scheme options from `/schemes` |
+
+Wording on the screens is plain language a citizen understands: the list is
+titled **"Applications for support after losing a job"**, and household size is
+shown as **"Number of family members"** (the API field stays `householdSize`).
 
 ## Business tests
 
@@ -234,7 +240,14 @@ Every error is `application/problem+json`. All endpoints require
     status, 3 for `MONTHLY`, 1 approved, 1 rejected, 0 exceptions and 1
     `NOT_RESIDENT`. And a summary with `to` before `from` is refused (400).
 
-Tests 1–11 are backend tests (`SupportBusinessRulesIT`), with the three
+12. **The applicant's name is looked up live and never stored.**
+    Given an application whose applicant the Population Register knows as Kalle
+    Kask (personal code starting `3900101`), when `/person` is requested, then it
+    answers Kalle Kask, born 1990-01-01, and writes a `REGISTRY_QUERY` audit event that does not contain
+    the name; no table stores the name. Given the Population Register is
+    unreachable, then it answers the date of birth with `nameAvailable: false`.
+
+Tests 1–12 are backend tests (`SupportBusinessRulesIT`), with the three
 registry adapters as test doubles.
 
 ## Outside the code

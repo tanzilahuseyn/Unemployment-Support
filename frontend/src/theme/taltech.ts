@@ -32,10 +32,13 @@ registerTheme('taltech', {
   colorTextPrimary: '#25262c',
   colorTextSecondary: '#4a4b58',
   colorTextDisabled: '#9396b0',
-  colorBgPage: '#f6f6f8',
-  colorBgCard: '#ffffff',
-  colorBgHover: '#ededf2',
-  colorBorder: '#ededf2',
+  // A little darker than the pack (#f6f6f8 / #ffffff / #ededf2), so the screen
+  // is less bright. Pop-ups and menus stay white (colorBgElevated).
+  colorBgPage: '#e6e6ed',
+  colorBgCard: '#f1f1f5',
+  colorBgElevated: '#ffffff',
+  colorBgHover: '#e4e4eb',
+  colorBorder: '#dcdce4',
   controlBorderColor: '#6e7184',
   fontFamily: "'Proxima Nova', Verdana, system-ui, sans-serif",
   borderRadiusSm: 2,
