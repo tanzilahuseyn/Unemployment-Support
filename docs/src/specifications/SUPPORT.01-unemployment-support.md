@@ -67,7 +67,7 @@ or `INCONCLUSIVE`.
 ## Data model
 
 Revision 1's changesets 01–03 and 90 are released and stay unchanged. Revision 2
-adds changesets 04–08 and the demo correction 91. Changeset 09 removes a schema
+adds changesets 04–08 and the demo changesets 91 and 92. Changeset 09 removes a schema
 left over from the course template; it changes nothing in the `support` schema.
 
 | Table | Field | Type | Rules |
@@ -119,6 +119,19 @@ rows stay as history.
 | 49004040044 | 49004040048 |
 
 39001010011 is already valid and stays.
+
+Because the list shows the date of birth, a second `context:demo` changeset (92)
+gives the six fictional people valid codes with varied, realistic birth dates.
+Each person keeps the same case:
+
+| Person (fictional) | Born | Code | Case |
+| --- | --- | --- | --- |
+| Kalle Johannes Kask | 14.03.1987 | 38703140274 | every check verified positive |
+| Liis Maria Lepp | 22.07.1994 | 49407225134 | lives in Tartu: residence verified adverse |
+| Mart Mets | 05.11.1979 | 37911052485 | not registered, active employment |
+| Anu Kristiina Allik | 28.02.1983 | 48302283762 | not registered as unemployed |
+| Rein Rebane | 19.09.1968 | 36809190424 | registered and employed: inconclusive |
+| Eve Liisa Ilves | 11.06.2001 | 60106117391 | Töötukassa unavailable |
 
 **Seeded schemes (placeholders):**
 

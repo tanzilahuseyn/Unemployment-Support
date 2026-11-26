@@ -56,7 +56,7 @@ connection a request uses).
 H='Authorization: Bearer superadmin'
 curl -s -H "$H" 'http://localhost:18440/api/support/applications?limit=2&sort=-periodStart'
 curl -s -H "$H" -H 'Content-Type: application/json' \
-     -d '{"applicantIsikukood":"39001010011","supportTypeCode":"ONE_OFF","periodStart":"2027-01-15","periodEnd":"2027-01-15","householdSize":1}' \
+     -d '{"applicantIsikukood":"38703140274","supportTypeCode":"ONE_OFF","periodStart":"2027-01-15","periodEnd":"2027-01-15","householdSize":1}' \
      -i http://localhost:18440/api/support/applications      # 201, Location: /api/support/applications/<id>
 curl -s -H "$H" -X POST http://localhost:18440/api/support/applications/<id>/verification
 curl -s -H "$H" 'http://localhost:18440/api/support/reports/summary?from=2026-10-01&to=2026-12-31'
@@ -77,7 +77,7 @@ and answers a `QueryResult`:
 
 ```json
 {
-  "data": [ { "id": 1000, "applicantIsikukood": "39001010011", "supportTypeCode": "MONTHLY", "periodStart": "2026-10-01", "periodEnd": "2026-10-31", "householdSize": 1, "status": "OPEN", "sysVersion": 1, "…": "…" } ],
+  "data": [ { "id": 1000, "applicantIsikukood": "38703140274", "supportTypeCode": "MONTHLY", "periodStart": "2026-10-01", "periodEnd": "2026-10-31", "householdSize": 1, "status": "OPEN", "sysVersion": 1, "…": "…" } ],
   "meta": { "total": 6, "offset": 0, "itemsPerPage": 20, "pages": 1 }
 }
 ```

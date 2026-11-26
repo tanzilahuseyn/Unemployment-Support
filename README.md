@@ -112,7 +112,7 @@ cd frontend && npm ci && cd ..
 | --- | --- |
 | Applications | http://localhost:18640/support |
 | Swagger UI, the live API contract | http://localhost:18440/swagger-ui.html |
-| Imitated registries | http://localhost:18440/mock-registry/population/39001010011 (also `/unemployment/…` and `/employment/…`) |
+| Imitated registries | http://localhost:18440/mock-registry/population/38703140274 (also `/unemployment/…` and `/employment/…`) |
 | PostgreSQL | localhost:18520 (`scripts/psql` for a shell) |
 | Documentation book | `scripts/run-docs` → http://localhost:18740 (needs mdBook) |
 
@@ -126,12 +126,12 @@ one per case:
 
 | Personal code | Person | Verification |
 | --- | --- | --- |
-| 39001010011 | Kalle Kask | all verified positive |
-| 49002020024 | Liis Lepp | residence verified adverse: lives in Tartu |
-| 39003030035 | Mart Mets | not registered and employed: verified adverse (one-off scheme asks only residence and unemployment) |
-| 49004040048 | Anu Allik | unemployment verified adverse: not registered |
-| 39005050059 | Rein Rebane | registered **and** employed: inconclusive, pending verification |
-| 49006060061 | Eve Ilves | Töötukassa unavailable: pending verification, try manual verification |
+| 38703140274 | Kalle Johannes Kask, born 14.03.1987 | all verified positive |
+| 49407225134 | Liis Maria Lepp, born 22.07.1994 | residence verified adverse: lives in Tartu |
+| 37911052485 | Mart Mets, born 05.11.1979 | not registered and employed: verified adverse (one-off scheme asks only residence and unemployment) |
+| 48302283762 | Anu Kristiina Allik, born 28.02.1983 | unemployment verified adverse: not registered |
+| 36809190424 | Rein Rebane, born 19.09.1968 | registered **and** employed: inconclusive, pending verification |
+| 60106117391 | Eve Liisa Ilves, born 11.06.2001 | Töötukassa unavailable: pending verification, try manual verification |
 
 The database is disposable: `scripts/reset-db` destroys and recreates it, and
 Liquibase rebuilds the schema on the next backend start.

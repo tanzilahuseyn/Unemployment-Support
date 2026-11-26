@@ -59,9 +59,9 @@ export const SupportCreate = () => {
                   : Promise.reject(new Error('Not a valid Estonian personal code (format, birth date or checksum)')),
             },
           ]}
-          extra="Try 39001010011 — the imitated registries know this person and all checks pass"
+          extra="Try 38703140274 (Kalle Johannes Kask) — the imitated registries know this person and all checks pass"
         >
-          <Input placeholder="39001010011" />
+          <Input placeholder="38703140274" />
         </Form.Item>
         <Form.Item name="supportTypeCode" label="Benefit scheme" rules={[{ required: true }]} extra="Each scheme names its legal basis and the registry facts its rules require">
           <Select options={types.map((t) => ({ value: t.code, label: t.name }))} placeholder="Choose a benefit scheme" />
