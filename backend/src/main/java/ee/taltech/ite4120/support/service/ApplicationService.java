@@ -121,13 +121,39 @@ public class ApplicationService {
      */
     @Transactional
     public Verification verify(Long id) {
+        return runVerification(id, "");
+    }
+
+    /**
+     * The pending applications the automatic retry may verify again: an UNAVAILABLE
+     * required check and no manual evidence (SUPPORT.01, Failure policy).
+     */
+    public List<Long> awaitingRetry() {
+        return applications.awaitingRetry();
+    }
+
+    /**
+     * Verify again exactly as {@link #verify}, for the automatic retry. Audited with
+     * details starting "automatic retry"; never decides. Skips an application that no
+     * longer qualifies (verified or decided in the meantime).
+     */
+    @Transactional
+    public boolean retryAutomatically(Long id) {
+        if (!applications.awaitingRetry().contains(id)) {
+            return false;
+        }
+        runVerification(id, "automatic retry · ");
+        return true;
+    }
+
+    private Verification runVerification(Long id, String auditPrefix) {
         Application a = requireUndecided(id);
         BenefitScheme scheme = scheme(a.getSupportTypeCode());
         RegistryCheckService.Result result = registries.check(a.getApplicantIsikukood(), scheme);
         for (Evidence e : result.evidence().values()) {
             e.setApplicationId(id);
             evidence.insert(e);
-            audit.log("REGISTRY_QUERY", id, e.getSource() + ": " + e.getResult());
+            audit.log("REGISTRY_QUERY", id, auditPrefix + e.getSource() + ": " + e.getResult());
         }
         ApplicationStatus status = statusFor(scheme, current(id));
         moveTo(id, status);

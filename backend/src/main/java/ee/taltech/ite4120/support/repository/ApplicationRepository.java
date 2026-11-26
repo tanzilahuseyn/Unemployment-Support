@@ -114,6 +114,25 @@ public class ApplicationRepository extends BaseRepository {
                 id) == 1;
     }
 
+    /**
+     * Pending applications whose current evidence has an UNAVAILABLE check and which
+     * have no manual evidence — what the automatic retry verifies again.
+     */
+    public List<Long> awaitingRetry() {
+        return jdbcTemplate.queryForList("""
+                with cur as (
+                    select distinct on (e.application_id, e.check_type) e.application_id, e.result
+                      from support.check_evidence e
+                     where e.sys_status = 'A'
+                     order by e.application_id, e.check_type, e.id desc)
+                select a.id from support.application a
+                 where a.sys_status = 'A' and a.status = 'PENDING_VERIFICATION'
+                   and exists (select 1 from cur where cur.application_id = a.id and cur.result = 'UNAVAILABLE')
+                   and not exists (select 1 from support.check_evidence m
+                                    where m.application_id = a.id and m.sys_status = 'A' and m.manual)
+                 order by a.id""", Long.class);
+    }
+
     /** Moves an undecided application to another status; false when it is already decided (a concurrent decision). */
     public boolean moveUndecided(Long id, ApplicationStatus status) {
         return jdbcTemplate.update(

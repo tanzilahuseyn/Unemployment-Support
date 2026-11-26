@@ -150,6 +150,9 @@ const VerificationCard = ({
             ) : (
               <div style={{ display: 'grid', gap: 6 }}>
                 <EvidenceRow e={e} />
+                {undecided && e.result === 'UNAVAILABLE' && (
+                  <Muted>The registry did not answer. It is asked again automatically every hour.</Muted>
+                )}
                 {undecided && (e.result === 'UNAVAILABLE' || e.result === 'INCONCLUSIVE') && (
                   <ManualVerify busy={busy} onSubmit={(r, s, n) => onManual(t, r, s, n)} />
                 )}
