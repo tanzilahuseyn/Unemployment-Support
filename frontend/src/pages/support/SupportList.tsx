@@ -176,7 +176,7 @@ export const SupportList = () => {
       {report && <SummaryView report={report} schemeName={typeName} />}
     </Modal>
     <ResourceList<Application>
-      title="Applications for support after losing a job"
+      title="Assignment of unemployment support payment"
       columns={columns}
       dataSource={rows}
       rowKey="id"

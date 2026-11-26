@@ -202,7 +202,8 @@ Every error is `application/problem+json`. All endpoints require
 | Register form `/support/new` | as revision 1 | | personal code validated with checksum; scheme options from `/schemes` |
 
 Wording on the screens is plain language a citizen understands: the list is
-titled **"Applications for support after losing a job"**, and household size is
+titled **"Assignment of unemployment support payment"** (the city's support, not
+the Unemployment Insurance Fund's insurance benefit), and household size is
 shown as **"Number of family members"** (the API field stays `householdSize`).
 
 ## Business tests
